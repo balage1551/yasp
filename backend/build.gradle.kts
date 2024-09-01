@@ -73,7 +73,9 @@ dependencies {
 
 //    implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
 
-    implementation("org.flywaydb:flyway-core")
+//    implementation("org.flywaydb:flyway-core")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
 }
 
     val frontendDir = rootDir.resolve("frontend")

@@ -11,6 +11,7 @@ export const messagesHU = merge({}, messagesCommon, {
     delete: 'Törlés',
     restore: 'Visszaállítás',
     copy: 'Másolás',
+    new: 'Új',
     switch: 'Váltás',
     loadingIsInProgress: 'Betöltés folyamatban...',
     yes: 'Igen',
@@ -78,9 +79,14 @@ export const messagesHU = merge({}, messagesCommon, {
   },
   enums: {
   },
-
+  editor: {
+    title: 'Szerkesztő',
+    directory: 'Könyvtár',
+  },
   slideShowInfo: {
-    title: 'A diavetítés adatai',
+    title: 'A rendelkezésre álló diavetítések',
+    new: 'Új diavetítés',
+    edit: 'Diavetítés szerkesztése',
     details: {
       numberOfSlides: 'Diák száma',
       numberOfBlocks: 'Blokkok száma'

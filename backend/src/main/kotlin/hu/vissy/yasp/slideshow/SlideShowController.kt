@@ -1,15 +1,12 @@
 package hu.vissy.yasp.slideshow
 
+import hu.vissy.yasp.arguments
 import hu.vissy.yasp.module.web.BaseController
-import hu.vissy.yasp.resource.ResourceController
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -18,8 +15,18 @@ import java.nio.file.Path
 @RestController
 class SlideShowController : BaseController() {
 
-    private val log = LoggerFactory.getLogger(ResourceController::class.java)
+    private val log = LoggerFactory.getLogger(SlideShowController::class.java)
 
+    @GetMapping("/list")
+    fun list(): ResponseEntity<SlideShowListResponseDTO> {
+        val rootPath: Path = Path.of(arguments.path)
+        val slideShowListResponseDTO = SlideShowListResponseDTO(arguments.path,
+            Files.list(rootPath)
+            .filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".yasp.json") }
+            .map { SlideShowListItemDTO(it.fileName.toString().substringBeforeLast(".yasp.json")) }
+            .toList())
+        return ResponseEntity(slideShowListResponseDTO, HttpStatus.OK)
+    }
 
     @PostMapping("/load")
     fun getImage(@RequestBody @Validated request: SlideShowRequestDTO): ResponseEntity<String> {

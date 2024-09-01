@@ -12,7 +12,15 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: () => import('../views/TestView.vue'),
+    component: () => import('../views/DashboardView.vue'),
+    meta: {
+      requiresAuth: false
+    },
+  },
+  {
+    path: '/editor',
+    name: 'Editor',
+    component: () => import('../views/EditorView.vue'),
     meta: {
       requiresAuth: false
     },
