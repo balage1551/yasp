@@ -85,8 +85,13 @@ export class SlideShow {
     const slide = block.slides[this.currentSlideIndex]
     console.log('Showing slide', this.currentBlockIndex, this.currentSlideIndex, slide.imageName)
     this.onSwap(slide)
-    // TODO onlyOnce
-    const trigger = slide.trigger ?? block.trigger ?? this.defaultTrigger
+    let trigger = slide.trigger
+    if (trigger && trigger.type === 'key' && trigger.onlyOnce && this.visitedSlides.has(slide)) {
+      trigger = undefined
+    }
+    if (!trigger) {
+      trigger = block.trigger ?? this.defaultTrigger
+    }
     if (trigger.type === 'timed' && this.state !== SlideShowState.MANUAL_HOLD) {
       this.countdown = setTimeout(() => this.showNext(), (trigger.seconds ?? 5) * 1000)
     }
