@@ -1,0 +1,133 @@
+<template>
+  <div class="stack" :class="{ 'fade-in': visible, 'fade-out': !visible }" v-bind="props">
+    <v-img v-if="slideInfo" :src="image" alt="slideInfo.imageName" class="image"></v-img>
+    <div class="title" v-if="slideInfo?.label">
+      <div :style="labelStyle">{{slideInfo.label.text}}</div>
+    </div>
+  </div>
+</template>
+<script setup lang="ts">
+
+import { VImg } from 'vuetify/components'
+import { ImageSlideInfo, LabelInfo } from '@/entities/ImageSlideInfo'
+import { computed, nextTick, ref, watchEffect } from 'vue'
+import useResourceApi from '@/api/resourceApi'
+import { useSlideStore } from '@/stores/slideStore'
+
+const props = withDefaults(defineProps<{
+  slideInfo: ImageSlideInfo | undefined
+  visible?: boolean
+}>(), {
+  visible: true
+})
+
+const resourceApi = useResourceApi()
+const slideStore = useSlideStore()
+
+const image = ref()
+const label = ref<LabelInfo|undefined>(undefined)
+
+const emit = defineEmits<{(e: 'image-loaded'): void
+}>()
+
+watchEffect(async () => {
+  if (props.slideInfo === undefined) {
+    image.value = undefined
+    label.value = undefined
+  } else {
+    const response = await resourceApi.requestImage(props.slideInfo.imageName)
+    image.value = URL.createObjectURL(response)
+    label.value = props.slideInfo.label
+    await nextTick(() => {
+      emit('image-loaded')
+    })
+  }
+})
+
+const labelStyle = computed(() => {
+  const l = label.value
+  // console.log('labelStyle', l)
+  if (!l) {
+    return ''
+  }
+  let styles = ''
+  const size = l.size ?? slideStore.labelDefaults.size
+  if (size) {
+    if (size.endsWith('%')) {
+      styles += `font-size: ${size.substring(0, size.length - 1)}vw;`
+    } else {
+      styles += `font-size: ${size}pt;`
+    }
+  }
+
+  const color = l.color ?? slideStore.labelDefaults.color
+  if (color) {
+    styles += `color: ${color};`
+  }
+
+  const top = l.top ?? slideStore.labelDefaults.top
+  if (top) {
+    if (top.endsWith('%')) {
+      styles += `margin-top: ${top.substring(0, top.length - 1)}vh;`
+    } else {
+      styles += `margin-top: ${top}px;`
+    }
+  }
+
+  const left = l.left ?? slideStore.labelDefaults.left
+  if (left) {
+    if (left.endsWith('%')) {
+      styles += `margin-left: ${left.substring(0, left.length - 1)}vw;`
+    } else {
+      styles += `margin-left: ${left}px;`
+    }
+  }
+
+  const outlined = l.outlined ?? slideStore.labelDefaults.outlined
+  if (outlined) {
+    const w = outlined.width ?? slideStore.labelDefaults.outlined?.width
+    const c = outlined.color ?? slideStore.labelDefaults.outlined?.color
+    styles += `text-shadow: -${w}px -${w}px 0 ${c}, ${w}px -${w}px 0 ${c},
+    -${w}px ${w}px 0 ${c}, ${w}px ${w}px 0 ${c};`
+  }
+
+  return styles
+})
+
+</script>
+
+<style scoped>
+
+.image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.stack {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  position: absolute;
+  background-color: #333333;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.title {
+  z-index: 1;
+  position: absolute;
+}
+
+.fade-in {
+  opacity: 1;
+  z-index: 1;
+}
+
+.fade-out {
+  opacity: 0;
+  z-index: 0;
+}
+</style>

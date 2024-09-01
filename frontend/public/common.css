@@ -1,0 +1,218 @@
+:root {
+    /* PMI colors */
+    --app-color-darkest: #1f1004;
+    --app-color-dark: #3a2016;
+    --app-color-medium: #4d2b1e;
+    --app-color-light: #865c4a;
+    --app-color-lightest: #ffece4;
+    --app-color-background: #121a0e;
+
+    --app-color-button-default-bg: #2c591a;
+    --app-color-button-default-text: #ffece4;
+    --app-color-button-default-active-bg: #83a976;
+    --app-color-button-default-active-text: #1d420d;
+    --app-color-button-default-bg-disabled: #72836a;
+    --app-color-button-default-text-disabled: #2e341e;
+
+    --app-color-green-light: #c2ffa7;
+
+}
+
+body {
+    overflow: hidden;
+    margin: 0;
+    background-color: var(--app-color-background) !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+    display: none;
+}
+
+.app {
+    font-family: 'Titillium Web', Arial, 'Arial Unicode MS', Helvetica, sans-serif;
+    background-color: var(--app-color-background) !important;
+    color: var(--app-color-lightest);
+    margin: 0;
+}
+
+
+.title-icon {
+    margin-top: 2px;
+}
+
+.title {
+    font-weight: bold;
+}
+
+.md {
+    margin-top: 5px;
+}
+
+.card {
+    border-color: var(--app-color-medium);
+    background-color: var(--app-color-darkest) !important;
+}
+
+.card-title {
+    background-color: var(--app-color-dark);
+    color: var(--app-color-lightest);
+}
+
+.card-text {
+    color: var(--app-color-lightest) !important;
+    padding: 10px !important;
+}
+
+.default-button {
+    color: var(--app-color-button-default-text) !important;
+    background-color: var(--app-color-button-default-bg) !important;
+}
+
+.default-button.v-btn--active {
+    color: var(--app-color-button-default-active-text) !important;
+    background-color: var(--app-color-button-default-active-bg) !important;
+}
+
+
+.default-button.v-btn--disabled {
+    color: var(--app-color-button-default-text-disabled) !important;
+    background-color: var(--app-color-button-default-bg-disabled) !important;
+}
+
+.v-list {
+    background-color: var(--app-color-dark) !important;
+    color: var(--app-color-lightest) !important;
+}
+
+
+.homework-type-normal {
+    color: #eeeeee !important;
+}
+
+.homework-type-extra {
+    color: #beff8e !important;;
+}
+
+.homework-type-announcement {
+    color: #ff8e8e !important;;
+}
+
+.homework-type-class_work {
+    color: #8eb2ff !important;;
+}
+
+.homework-type-deleted {
+    color: #666666 !important;;
+}
+
+.homework-type-deleted {
+    color: #444444 !important;
+}
+
+
+.card-school-today, .card-holiday-today, .card-weekend-today {
+    border-width: 2px;
+    border-color: #eeeebb;
+}
+
+.card-title-school-today {
+    color: #eeeeee;
+    background: repeating-linear-gradient(45deg, #222222, #222222 10px, #111111 10px, #111111 20px);
+}
+
+.card-holiday {
+    border-color: #9f4f4f;
+}
+
+.card-title-holiday {
+    background-color: #702f2f;
+    color: #e39191;
+}
+
+.card-title-holiday-today {
+    color: #e39191;
+    border-width: 2px;
+    background: repeating-linear-gradient(45deg, #702f2f, #702f2f 10px, #441a1a 10px, #441a1a 20px);
+}
+
+.card-weekend {
+    border-color: #617e61;
+}
+
+.card-title-weekend {
+    background-color: #3f5026;
+    color: #a8e391;
+}
+
+.card-title-weekend-today {
+    color: #a8e391;
+    border-width: 2px;
+    background: repeating-linear-gradient(45deg, #3f5026, #3f5026 10px, #262f17 10px, #262f17 20px);
+}
+
+
+.action-finish {
+    background-color: green;
+}
+
+.action-reset {
+    background-color: darkred;
+}
+
+.action-skip {
+    background-color: royalblue;
+}
+
+.rich-text {
+    overflow: auto;
+}
+
+.rich-text > ul,
+.rich-text > ol {
+    padding: 0 2rem;
+}
+
+.rich-text > h1,
+.rich-text > h2,
+.rich-text > h3,
+.rich-text > h4,
+.rich-text > h5,
+.rich-text > h6 {
+    line-height: 1.1;
+}
+
+.rich-text > code {
+    background-color: #61616120;
+    color: #616161;
+}
+
+.rich-text > pre {
+    background: #0D0D0D;
+    color: #FFF;
+    font-family: 'JetBrainsMono', monospace;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+}
+
+.rich-text > pre > code {
+    color: inherit;
+    padding: 0;
+    background: none;
+    font-size: 0.8rem;
+}
+
+
+.rich-text > blockquote {
+    padding-left: 1rem;
+    border-left: 2px solid #0D0D0D20;
+}
+
+.flip-x {
+    transform: scaleX(-1);
+}
+
+.flip-y {
+    transform: scaleY(-1);
+}
