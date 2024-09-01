@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { LabelInfo } from '@/entities/ImageSlideInfo'
+import { LabelInfo } from '@/entities/SlideShowTypes'
 
 export const useSlideStore =
   defineStore('slide', () => {

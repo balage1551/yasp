@@ -1,4 +1,4 @@
-import { ImageSlideInfo, SlideShowInfo, Trigger } from '@/entities/ImageSlideInfo'
+import { Slide, SlideShowInfo, Trigger } from '@/entities/SlideShowTypes'
 import { useEventListener } from '@vueuse/core'
 
 export enum SlideShowState {
@@ -11,36 +11,22 @@ export enum SlideShowState {
 
 export class SlideShow {
   info: SlideShowInfo
-  totalSlides: number
   currentBlockIndex: number = 0
   currentSlideIndex: number = 0
-  onSwap: (slideInfo: ImageSlideInfo | undefined) => void
+  onSwap: (slideInfo: Slide | undefined) => void
   onStateChange: (state: SlideShowState) => void = () => {}
   private defaultTrigger: Trigger = { type: 'timed', seconds: 5 }
   private countdown: NodeJS.Timeout | null = null
   private state: SlideShowState = SlideShowState.PLAYING
 
-  private visitedSlides = new Set<ImageSlideInfo>()
+  private visitedSlides = new Set<Slide>()
 
   constructor(info: SlideShowInfo,
-    onSwap: (slideInfo: ImageSlideInfo | undefined) => void,
+    onSwap: (slideInfo: Slide | undefined) => void,
     onStateChange: (state: SlideShowState) => void) {
     this.info = info
     this.onSwap = onSwap
     this.onStateChange = onStateChange
-    this.totalSlides = info.blocks.reduce((acc, block) => acc + block.slides.length, 0)
-    let c = 1
-    for (let bi = 0; bi < info.blocks.length; bi++) {
-      const block = info.blocks[bi]
-      for (let sibi = 0; sibi < block.slides.length; sibi++) {
-        const slide = block.slides[sibi]
-        slide.absoluteIndex = c
-        slide.blockIndex = bi + 1
-        slide.slideCountInBlock = block.slides.length
-        slide.slideInBlockIndex = sibi + 1
-        c++
-      }
-    }
   }
 
   private nextBlock() {

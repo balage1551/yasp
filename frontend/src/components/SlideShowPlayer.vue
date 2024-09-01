@@ -7,14 +7,15 @@
     <v-icon v-if="state === SlideShowState.FINISHED" class="icon finished" size="50">mdi-square</v-icon>
     <v-progress-linear class="progress" height="8px" :max="total" :model-value="progress"></v-progress-linear>
     <div class="infoBox" v-if="showInfo">
-      {{ currentSlide?.imageName }} ({{ currentSlide?.absoluteIndex }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Slide {{ currentSlide?.slideInBlockIndex }} of {{ currentSlide?.slideCountInBlock }} in block {{ currentSlide?.blockIndex }}
+      {{ currentSlide?.imageName }} ({{ currentSlide?.absoluteIndex }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Slide {{ currentSlide?.inBlockIndex }} of {{ currentSlide?.block.slides.length }} in block {{ currentSlide?.blockIndex }}
     </div>
   </div>
 </template>
 <script setup lang="ts">
 
 import { VIcon, VProgressLinear } from 'vuetify/components'
-import { SlideShowInfo } from '@/entities/ImageSlideInfo'
+import { Slide, SlideShowInfo } from '@/entities/SlideShowTypes'
 import { onMounted, ref } from 'vue'
 import CrossFader from '@/components/CrossFader.vue'
 import { SlideShow, SlideShowState } from '@/entities/SlideShow'
@@ -24,11 +25,14 @@ const props = withDefaults(defineProps<{
   slideShow: SlideShowInfo
 }>(), {})
 
+const emit = defineEmits<{(e: 'finished'): void
+}>()
+
 const crossFader = ref<typeof CrossFader>()
 const state = ref<SlideShowState>()
 const total = ref(0)
 const progress = ref(0)
-const currentSlide = ref<SlideShowInfo | undefined>()
+const currentSlide = ref<Slide | undefined>()
 const showInfo = ref(true)
 
 onMounted(() => {
@@ -39,7 +43,7 @@ onMounted(() => {
     (state: SlideShowState) => {
       setOsdIcon(state)
     })
-  total.value = show.totalSlides
+  total.value = show.info.totalSlides
   useEventListener(window, 'keydown', (event) => {
     if (event.key === 'i') {
       showInfo.value = !showInfo.value
@@ -48,7 +52,7 @@ onMounted(() => {
   show.start()
 })
 
-function swap(si: SlideShowInfo | undefined) {
+function swap(si: Slide | undefined) {
   currentSlide.value = si
   crossFader.value?.setNext(si)
   progress.value = si?.absoluteIndex ?? 0
@@ -56,6 +60,9 @@ function swap(si: SlideShowInfo | undefined) {
 
 function setOsdIcon(s: SlideShowState) {
   state.value = s
+  if (s === SlideShowState.FINISHED) {
+    emit('finished')
+  }
 }
 
 </script>

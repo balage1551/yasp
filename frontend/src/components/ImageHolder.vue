@@ -9,13 +9,13 @@
 <script setup lang="ts">
 
 import { VImg } from 'vuetify/components'
-import { ImageSlideInfo, LabelInfo } from '@/entities/ImageSlideInfo'
+import { LabelInfo, SlideShowTypes } from '@/entities/SlideShowTypes'
 import { computed, nextTick, ref, watchEffect } from 'vue'
 import useResourceApi from '@/api/resourceApi'
 import { useSlideStore } from '@/stores/slideStore'
 
 const props = withDefaults(defineProps<{
-  slideInfo: ImageSlideInfo | undefined
+  slideInfo: SlideShowTypes | undefined
   visible?: boolean
 }>(), {
   visible: true

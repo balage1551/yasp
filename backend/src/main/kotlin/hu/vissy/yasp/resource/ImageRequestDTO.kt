@@ -1,4 +1,4 @@
-package hu.vissy.yasp.image
+package hu.vissy.yasp.resource
 
 data class ImageRequestDTO (
     val fileName: String

@@ -3,7 +3,28 @@
 
     <v-container fluid class="pa-0 ma-0 ">
       <div class="image-container">
-        <slide-show-player :slideShow="slideShow" >
+        <v-card v-if="slideShow && !play" class="slide-show-info">
+          <v-card-title class="slide-show-info-title">
+            {{ $t('slideShowInfo.title') }}
+          </v-card-title>
+          <v-card-text class="slide-show-info-details">
+            <table>
+              <tr>
+                <td class="info-label">{{ $t('slideShowInfo.details.numberOfSlides') }}</td>
+                <td class="info-value">{{ slideShow.totalSlides }}</td>
+              </tr>
+              <tr>
+                <td class="info-label">{{ $t('slideShowInfo.details.numberOfBlocks') }}</td>
+                <td class="info-value">{{ slideShow.blocks.length }}</td>
+              </tr>
+            </table>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn @click="play = true" color="primary" variant="flat">{{ $t('slideShowInfo.play') }}</v-btn>
+          </v-card-actions>
+        </v-card>
+        <slide-show-player v-if="play && slideShow" :slideShow="slideShow" @finished="play = false">
         </slide-show-player>
       </div>
     </v-container>
@@ -12,67 +33,47 @@
 </template>
 <script setup lang="ts">
 
-import { VContainer } from 'vuetify/components'
-import { shallowRef, ShallowRef } from 'vue'
+import { VBtn, VCard, VCardActions, VCardText, VCardTitle, VContainer, VSpacer } from 'vuetify/components'
+import { onMounted, ref, shallowRef, ShallowRef } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
-import { SlideShowInfo } from '@/entities/ImageSlideInfo'
+import { SlideShowInfo } from '@/entities/SlideShowTypes'
 import SlideShowPlayer from '@/components/SlideShowPlayer.vue'
+import useSlideShowApi from '@/api/slideShowApi'
+import { processSlideShowData } from '@/entities/SlideShowUtils'
 
-const slideShow: ShallowRef<SlideShowInfo> = shallowRef({
-  blocks: [
-    {
-      slides: [
-        {
-          imageName: '20240812-102654-0004.jpg',
-          label: {
-            text: 'Reykjavik',
-            size: '5%',
-            color: '#333333',
-            top: '25%',
-            left: '40%',
-            outlined: {
-              color: '#aaaaaa',
-              width: 2
-            }
-          }
-        },
-        {
-          imageName: '20240813-101736-0016.jpg',
-          label: {
-            text: 'Rubber whales',
-            top: '50',
-            left: '100',
-          },
-          trigger: {
-            type: 'key',
-            onlyOnce: true
-          }
-        },
-        {
-          imageName: '20240812-182703-0013.jpg'
-        }
-      ],
-      atTheEnd: {
-        type: 'loop'
-      }
-    },
-    {
-      slides: [
-        {
-          imageName: '20240814-093824-0021.jpg'
-        },
-        {
-          imageName: '20240814-145737-0031.jpg'
-        }
-      ],
-      atTheEnd: {
-        type: 'hold'
-      }
-    }
-  ]
+const slideShow: ShallowRef<undefined | SlideShowInfo> = shallowRef()
+const play = ref(false)
+
+onMounted(() => {
+  useSlideShowApi().requestSlideShow('gallery/test', 'test').then((response) => {
+    slideShow.value = processSlideShowData(response)
+    // play.value = true
+  })
 })
 
 </script>
 
 <style scoped>
+
+.slide-show-info {
+  width: 40%;
+  margin-left: 30%;
+  margin-top: 10%;
+}
+
+.slide-show-info-title {
+  background-color: #8689ea;
+  color: whitesmoke;
+}
+
+.slide-show-info-details {
+  padding: 5px;
+}
+
+.info-label {
+  text-align: left;
+  font-weight: bold;
+  padding: 2px 10px 2px 5px;
+}
+
 </style>

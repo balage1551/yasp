@@ -30,18 +30,6 @@ export type KeyTrigger = {
 
 export type Trigger = TimedTrigger | KeyTrigger
 
-export type ImageSlideInfo = {
-  imageName: string
-  label?: LabelInfo
-  trigger?: Trigger
-
-  blockIndex?: number
-  slideCountInBlock?: number
-  slideInBlockIndex?: number
-  absoluteIndex?: number
-
-}
-
 export type AtTheEndContinue = {
   type: 'continue'
 }
@@ -56,13 +44,40 @@ export type AtTheEndLoop = {
   startAt?: number | string
 }
 
-export type SlideShowBlock = {
-  slides: ImageSlideInfo[],
+export type ImageSlideData = {
+  imageName: string
+  label?: LabelInfo
+  trigger?: Trigger
+}
+
+export type Slide = ImageSlideData & {
+  blockIndex?: number
+  inBlockIndex?: number
+  absoluteIndex?: number
+  // eslint-disable-next-line no-use-before-define
+  block: SlideShowBlock
+}
+
+export type SlideShowBlockBase = {
   transition?: Transition
   trigger?: Trigger
   atTheEnd?: AtTheEndContinue | AtTheEndHold | AtTheEndLoop
 }
 
+export type SlideShowBlockData = SlideShowBlockBase & {
+  slides: ImageSlideData[]
+}
+
+export type SlideShowBlock = SlideShowBlockBase & {
+  slides: Slide[]
+  index: number
+}
+
+export type SlideShowData = {
+  blocks: SlideShowBlockData[]
+}
+
 export type SlideShowInfo = {
   blocks: SlideShowBlock[]
+  totalSlides: number
 }

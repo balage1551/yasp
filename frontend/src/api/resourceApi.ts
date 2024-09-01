@@ -1,13 +1,5 @@
 import { request } from '@/utils/request'
 
-function requestTestImage(id: number): Promise<Blob> {
-  return request({
-    url: '/resource/test/image/' + id,
-    method: 'get',
-    responseType: 'blob'
-  })
-}
-
 function requestImage(fileName: string): Promise<Blob> {
   return request({
     url: '/resource/image',
@@ -20,8 +12,6 @@ function requestImage(fileName: string): Promise<Blob> {
 }
 
 const resourceApiInstance = {
-  requestTestImage,
-
   requestImage
 }
 
