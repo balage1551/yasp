@@ -84,3 +84,9 @@ export type SlideShowInfo = {
   blocks: SlideShowBlock[]
   totalSlides: number
 }
+
+export type BucketItem = {
+  imageName: string
+  thumbnail?: URL | undefined
+  usedInSlideShow: boolean
+}

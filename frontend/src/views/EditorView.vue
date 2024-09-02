@@ -22,7 +22,7 @@
         <v-container>
 
         </v-container>
-        <v-list v-if="slideShow" class="reel-list" v-model:opened="openedBlocks">
+        <v-list v-if="slideShow" class="reel-list" v-model:opened="openedBlocks" ref="dropZone">
           <v-list-group v-for="block in slideShow.blocks" :key="block.uid" :value="block.uid">
             <template v-slot:activator="{props}">
               <v-list-item
@@ -60,14 +60,16 @@
                       </v-menu>
                     </v-col>
                     <v-col cols="5" class="text-right" >
-                        <v-icon v-if="block.index !== 1" size="40" @click="mergeUp(block)">mdi-arrow-expand-up</v-icon>
+                      <v-icon :disabled="block.index === 1" size="32" @click="swap(block, -1)">mdi-arrow-up</v-icon>
+                      <v-icon :disabled="block.index === slideShow.blocks.length" size="32" @click="swap(block, 1)">mdi-arrow-down</v-icon>
+                      <v-icon :disabled="block.index === 1" size="32" @click="mergeUp(block)">mdi-arrow-expand-up</v-icon>
                     </v-col>
                   </v-row>
                 </v-container>
               </v-list-item>
             </template>
 
-            <v-list-item v-for="slide in block.slides" :key="slide.absoluteIndex" class="my-1 slide-box">
+            <v-list-item v-for="slide in block.slides" :key="slide.absoluteIndex" class="my-1 slide-box" >
               <template #prepend>
                 <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
                        :src="slide.thumbnail" aspect-ratio="1"></v-img>
@@ -92,13 +94,29 @@
         </v-list>
       </v-sheet>
       <v-sheet ref="bucket" class="bucket" variant="elevated" :style="boxHeight">
-        <v-container class="ma-0">
-          <v-row>
-            <v-col cols="4">
-              BUCKET
-            </v-col>
-          </v-row>
-        </v-container>
+        <v-list v-if="bucketList" class="bucket-list">
+            <v-list-item v-for="image in unusedItemsInBucket" :key="image.fileName" class="my-1 slide-box" :class="{ 'selected': selectedBucketItems.includes(image) }" @click="selectItem($event, image)">
+              <template #prepend>
+                <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
+                       :src="image.thumbnail" aspect-ratio="1"></v-img>
+              </template>
+              <template #append>
+<!--                <v-icon size="40">mdi-tag-edit</v-icon>-->
+<!--                <v-icon size="40">mdi-transition-masked</v-icon>-->
+<!--                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
+<!--                <div style="width: 10px"></div>-->
+<!--                <v-icon size="40">mdi-delete</v-icon>-->
+
+              </template>
+              <v-list-item-title class="font-weight-bold mb-2">
+                {{ image.imageName }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+<!--                <v-icon :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
+<!--                <v-icon :style="'color:'+ ((slide.trigger?.type === 'key') ? 'white' : 'gray')">mdi-mouse</v-icon>-->
+              </v-list-item-subtitle>
+            </v-list-item>
+        </v-list>
       </v-sheet>
     </v-container>
   </application-layout>
@@ -124,7 +142,7 @@ import {
 } from 'vuetify/components'
 import { computed, onMounted, Ref, ref, watchEffect } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
-import { Slide, SlideShowBlock, SlideShowInfo } from '@/entities/SlideShowTypes'
+import { BucketItem, Slide, SlideShowBlock, SlideShowInfo } from '@/entities/SlideShowTypes'
 import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
@@ -167,6 +185,7 @@ onMounted(async () => {
       })
     })
   }
+  scan()
 })
 
 function scan() {
@@ -175,18 +194,20 @@ function scan() {
     console.log('scan response', response)
     if (response.successful) {
       const slideImageNames = slideShow.value.blocks.flatMap((block) => block.slides).map((slide) => slide.imageName)
-      const newBlock: SlideShowBlock = { slides: [], index: slideShow.value.blocks.length + 1 }
-      slideShow.value.blocks.push(newBlock)
+      bucketList.value = []
       response.images?.forEach((file) => {
         console.log('file', file)
-        if (!slideImageNames.some((s) => s === file.fileName)) {
-          newBlock.slides.push({
-            imageName: file.fileName,
-            blockIndex: newBlock.index,
-            inBlockIndex: newBlock.slides.length + 1,
-            block: newBlock
-          })
-        }
+        bucketList.value.push({
+          imageName: file.fileName,
+          thumbnail: undefined,
+          usedInSlideShow: slideImageNames.indexOf(file.fileName) !== -1
+        })
+        resourceApi.requestThumbnail(file.fileName).then((response) => {
+          const b = bucketList.value.find((i) => i.imageName === file.fileName)
+          if (b) {
+            b.thumbnail = URL.createObjectURL(response)
+          }
+        })
       })
     }
   })
@@ -245,6 +266,44 @@ watchEffect(() => {
   console.log('OB', [...openedBlocks.value])
 })
 
+const bucketList = ref<BucketItem[]>([])
+const unusedItemsInBucket = computed(() => bucketList.value.filter((item) => item.usedInSlideShow === false))
+const selectedBucketItems = ref<BucketItem[]>([])
+let lastSelectedBucketItemIndex: number = -1
+
+function selectItem(event: MouseEvent, bucketItem: BucketItem) {
+  const itemIndex = unusedItemsInBucket.value.findIndex(item => item === bucketItem)
+
+  const index = selectedBucketItems.value.indexOf(bucketItem)
+  if (event.shiftKey && lastSelectedBucketItemIndex !== -1) {
+    // Shift+Click: Select range
+    const start = Math.min(lastSelectedBucketItemIndex, itemIndex)
+    const end = Math.max(lastSelectedBucketItemIndex, itemIndex)
+    if (!event.ctrlKey) {
+      selectedBucketItems.value = []
+    }
+    for (let i = start; i <= end; i++) {
+      selectedBucketItems.value.push(unusedItemsInBucket.value[i])
+    }
+  } else if (event.ctrlKey) {
+    // Ctrl+Click: Toggle selection
+    if (index !== -1) {
+      selectedBucketItems.value.splice(index, 1)
+    } else {
+      selectedBucketItems.value.push(bucketItem)
+    }
+  } else {
+    // Single click: Select single item
+    selectedBucketItems.value = [bucketItem]
+  }
+
+  lastSelectedBucketItemIndex = itemIndex
+}
+
+function swap(block: Block, direction: number) {
+
+}
+
 </script>
 
 <style scoped>
@@ -269,12 +328,14 @@ watchEffect(() => {
   width: 50%;
   left: 50%;
   color: whitesmoke;
+  overflow-y: auto;
 }
 
-.reel-list {
+.reel-list, .bucket-list {
   text-align: left;
   margin: 2px 5px;
   background-color: #0d0d0d !important;
+  user-select: none;
 }
 
 .reel-list-item {
@@ -303,6 +364,10 @@ watchEffect(() => {
 .block-index {
   font-size: 120%;
   font-weight: bold;
+}
+
+.selected {
+  background-color: #2c549b;
 }
 
 </style>

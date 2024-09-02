@@ -36,23 +36,31 @@ class ResourceController : BaseController() {
 
         return ResponseEntity(imageBytes, headers, HttpStatus.OK)
     }
+
+    private val thumbnailCache = mutableMapOf<String, ByteArray>()
+
     @PostMapping("/thumbnail")
     fun getThumbnail(@RequestBody @Validated request: ImageRequestDTO): ResponseEntity<ByteArray> {
-        log.info("Requesting thumbnail: ${request.fileName}")
-        val imgFile: Path = Path.of("${arguments.path}/${request.fileName}")
-        val originalImage: BufferedImage = ImageIO.read(Files.newInputStream(imgFile))
+        val key = "${arguments.path}/${request.fileName}"
+        log.info("Requesting thumbnail: $key")
+        if (!thumbnailCache.containsKey(key)) {
+            val imgFile: Path = Path.of(key)
+            val originalImage: BufferedImage = ImageIO.read(Files.newInputStream(imgFile))
 
-        val (width, height) = calculateThumbnailSize(originalImage.width, originalImage.height, 120, 80)
-        val resizedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-        val graphics = resizedImage.createGraphics()
-        graphics.drawImage(originalImage, 0, 0, width, height, null)
-        graphics.dispose()
+            val (width, height) = calculateThumbnailSize(originalImage.width, originalImage.height, 120, 80)
+            val resizedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+            val graphics = resizedImage.createGraphics()
+            graphics.drawImage(originalImage, 0, 0, width, height, null)
+            graphics.dispose()
 
-        val outputStream = ByteArrayOutputStream()
-        ImageIO.write(resizedImage, "jpeg", outputStream)
-        val imageBytes = outputStream.toByteArray()
-        log.info("Thumbnail generated, size: ${imageBytes.size}")
+            val outputStream = ByteArrayOutputStream()
+            ImageIO.write(resizedImage, "jpeg", outputStream)
+            val imageBytes = outputStream.toByteArray()
+            log.info("Thumbnail generated, size: ${imageBytes.size}")
+            thumbnailCache[key] = imageBytes
+        }
 
+        val imageBytes = thumbnailCache[key]!!
         val headers = HttpHeaders()
         headers.add("Content-Type", "image/jpeg")
 
