@@ -1,6 +1,6 @@
 export const messagesCommon = {
   common: {
-    appName: 'Homeworkmole',
+    appName: 'Yasp!',
   },
   language: {
     nativeName: {

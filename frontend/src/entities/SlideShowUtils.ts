@@ -1,5 +1,11 @@
 import { Slide, SlideShowBlock, SlideShowData, SlideShowInfo } from '@/entities/SlideShowTypes'
 
+let uidCounter = 0
+
+export function nextUID() {
+  return uidCounter++
+}
+
 export function processSlideShowData(data: SlideShowData) : SlideShowInfo {
   const info : SlideShowInfo = { blocks: [], totalSlides: 0 }
   for (let bi = 0; bi < data.blocks.length; bi++) {
@@ -9,7 +15,9 @@ export function processSlideShowData(data: SlideShowData) : SlideShowInfo {
       transition: blockData.transition,
       trigger: blockData.trigger,
       atTheEnd: blockData.atTheEnd,
-      index: bi + 1
+      name: blockData.name,
+      index: bi + 1,
+      uid: nextUID()
     }
     info.blocks.push(block)
 

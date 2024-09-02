@@ -6,7 +6,10 @@
         <v-card v-if="slideShowList.length > 0 && !play" class="slide-show-info">
           <v-card-title class="slide-show-info-title">
             {{ $t('slideShowInfo.title') }}
-            <v-btn @click="play = true" color="gray" class="float-end" variant="flat">{{ $t('slideShowInfo.new') }}</v-btn>
+            <v-btn @click="play = true" color="gray" class="float-end" variant="flat">{{
+                $t('slideShowInfo.new')
+              }}
+            </v-btn>
           </v-card-title>
           <v-card-text class="slide-show-info-details">
             <table>
@@ -14,7 +17,10 @@
                 <td class="info-label">{{ ss.name }}</td>
                 <td class="info-value">
                   <v-btn @click="startPlay(ss)" color="primary" variant="flat">{{ $t('slideShowInfo.play') }}</v-btn>
-                  <v-btn @click="startEditor(ss)" color="green" variant="flat" class="ml-5">{{ $t('slideShowInfo.edit') }}</v-btn>
+                  <v-btn @click="startEditor(ss)" color="green" variant="flat" class="ml-5">{{
+                      $t('slideShowInfo.edit')
+                    }}
+                  </v-btn>
                 </td>
               </tr>
             </table>
@@ -65,9 +71,7 @@ function startPlay(ss: SlideShowListItem) {
 const router = useRouter()
 
 function startEditor(ss: SlideShowListItem) {
-  useSlideShowApi().requestSlideShow(path.value, ss.name).then((response) => {
-    useEditorStore().path = path.value
-    useEditorStore().slideShow = processSlideShowData(response)
+  useEditorStore().setCurrentSlideShow(path.value, ss.name).then(() => {
     router.push({ name: 'Editor' })
   })
 }

@@ -1,17 +1,31 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { SlideShowInfo } from '@/entities/SlideShowTypes'
+import useSlideShowApi from '@/api/slideShowApi'
+import { processSlideShowData } from '@/entities/SlideShowUtils'
 
 export const useEditorStore =
   defineStore('editor', () => {
-    const path = ref<string>('')
-    const slideShow = ref<SlideShowInfo | null>(null)
+    const path = ref<string >('')
+    const name = ref<string >('')
+    const slideShow = ref<SlideShowInfo | undefined>(undefined)
+
+    async function setCurrentSlideShow(p: string, n : string) {
+      return useSlideShowApi().requestSlideShow(p, n).then((response) => {
+        path.value = p
+        name.value = n
+        slideShow.value = processSlideShowData(response)
+        return slideShow.value
+      })
+    }
 
     return {
       path,
-      slideShow
+      slideShow,
+
+      setCurrentSlideShow
     }
   },
   {
-    persist: false
+    persist: true
   })

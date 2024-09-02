@@ -82,6 +82,14 @@ export const messagesHU = merge({}, messagesCommon, {
   editor: {
     title: 'Szerkesztő',
     directory: 'Könyvtár',
+    block: {
+      name: 'Megnevezés'
+    },
+    atTheEnd: {
+      continue: 'Folytatás',
+      hold: 'Megállás',
+      loop: 'Ismétlés'
+    },
   },
   slideShowInfo: {
     title: 'A rendelkezésre álló diavetítések',

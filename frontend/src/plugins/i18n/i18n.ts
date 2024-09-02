@@ -4,8 +4,8 @@ import { messages } from '@/plugins/i18n/messages'
 const i18n = createI18n({
   legacy: false,
   globalInjection: true,
-  locale: 'en',
-  fallbackLocale: 'hu',
+  locale: 'hu',
+  fallbackLocale: 'wn',
   reloadOnLanguageChange: true,
   fallbackWarn: false,
   messages,

@@ -56,12 +56,14 @@ export type Slide = ImageSlideData & {
   absoluteIndex?: number
   // eslint-disable-next-line no-use-before-define
   block: SlideShowBlock
+  thumbnail?: URL | undefined
 }
 
 export type SlideShowBlockBase = {
   transition?: Transition
   trigger?: Trigger
-  atTheEnd?: AtTheEndContinue | AtTheEndHold | AtTheEndLoop
+  atTheEnd?: AtTheEndContinue | AtTheEndHold | AtTheEndLoop,
+  name?: string
 }
 
 export type SlideShowBlockData = SlideShowBlockBase & {
@@ -71,6 +73,7 @@ export type SlideShowBlockData = SlideShowBlockBase & {
 export type SlideShowBlock = SlideShowBlockBase & {
   slides: Slide[]
   index: number
+  uid: number
 }
 
 export type SlideShowData = {

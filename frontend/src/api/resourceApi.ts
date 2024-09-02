@@ -11,8 +11,20 @@ function requestImage(fileName: string): Promise<Blob> {
   })
 }
 
+function requestThumbnail(fileName: string): Promise<Blob> {
+  return request({
+    url: '/resource/thumbnail',
+    method: 'post',
+    responseType: 'blob',
+    data: {
+      fileName
+    }
+  })
+}
+
 const resourceApiInstance = {
-  requestImage
+  requestImage,
+  requestThumbnail
 }
 
 export default function useResourceApi() {
