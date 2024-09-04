@@ -91,6 +91,10 @@ export const messagesHU = merge({}, messagesCommon, {
       loop: 'Ismétlés'
     },
     drag: '{count} kép',
+    deleteSlide: {
+      title: 'Diák törlése',
+      message: 'Biztosan törli a kiválasztott diákat?'
+    },
   },
   slideShowInfo: {
     title: 'A rendelkezésre álló diavetítések',

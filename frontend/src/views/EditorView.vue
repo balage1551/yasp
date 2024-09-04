@@ -18,114 +18,130 @@
           </v-row>
         </v-container>
       </v-sheet>
+      <v-toolbar density="compact" class="reel-toolbar px-2" ref="reelToolbar">
+        <v-spacer></v-spacer>
+          <v-icon size="32" @click="addBlock">mdi-folder-plus</v-icon>
+      </v-toolbar>
       <v-sheet ref="reel" class="reel" variant="elevated" :style="boxHeight">
-        <v-container>
+          <v-list v-if="slideShow" class="reel-list" v-model:opened="openedBlocks" ref="dropZone">
+            <v-list-group v-for="block in slideShow.blocks" :key="block.uid"
+                          ref="reelBlocks"
+                          :value="block.uid"
+                          @dragenter="handleBlockDragEnter($event, block)"
+                          @dragleave="handleBlockDragLeave($event, block)"
+                          @drop="drop($event, dragTarget)"
+                          @dragover.prevent>
+              <template v-slot:activator="{props}">
+                <v-list-item
+                  v-bind="props"
+                >
+                  <v-container @click.stop="">
+                    <v-row>
+                      <v-col cols="6">
+                        <v-text-field v-model="block.name" :label="$t('editor.block.name')" hide-details density="compact"
+                                      variant="outlined">
+                          <template #prepend>
+                            <div class="block-index">
+                              {{ block.index }} - {{ block.uid }}
+                            </div>
+                          </template>
+                        </v-text-field>
+                      </v-col>
+                      <v-col cols="1">
+                        <v-menu :id="'atTheEndMenu-'+block.uid" location="bottom" @click.stop="">
+                          <template v-slot:activator="{ props }">
+                            <v-icon v-if="block.atTheEnd?.type === 'hold'" size="32" class="mt-1" v-bind="props">
+                              mdi-mouse
+                            </v-icon>
+                            <v-icon v-else-if="block.atTheEnd?.type === 'loop'" class="mt-1" size="32" v-bind="props">
+                              mdi-repeat-variant
+                            </v-icon>
+                            <v-icon v-else size="32" class="mt-1" v-bind="props">mdi-arrow-right-thick</v-icon>
+                          </template>
+                          <v-list>
+                            <v-list-item prepend-icon="mdi-arrow-right-thick" @click="setAtTheEnd(block, 'continue')">
+                              <v-list-item-title>{{ $t('editor.atTheEnd.continue') }}</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item prepend-icon="mdi-mouse" @click="setAtTheEnd(block, 'hold')">
+                              <v-list-item-title>{{ $t('editor.atTheEnd.hold') }}</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item prepend-icon="mdi-repeat-variant" @click="setAtTheEnd(block, 'loop')">
+                              <v-list-item-title>{{ $t('editor.atTheEnd.loop') }}</v-list-item-title>
+                            </v-list-item>
+                          </v-list>
+                        </v-menu>
+                      </v-col>
+                      <v-col cols="5" class="text-right">
+                        <v-icon :disabled="block.index === 1" size="32" @click="mergeUp(block)">mdi-arrow-expand-up
+                        </v-icon>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-list-item>
+              </template>
 
-        </v-container>
-        <v-list v-if="slideShow" class="reel-list" v-model:opened="openedBlocks" ref="dropZone">
-          <v-list-group v-for="block in slideShow.blocks" :key="block.uid" :value="block.uid"
-                        @dragenter="handleBlockDragEnter($event, block)"
-                        @dragleave="handleBlockDragLeave($event, block)"
-                        @drop="drop($event, dragTarget)"
-                        @dragover.prevent>
-          <template v-slot:activator="{props}">
-              <v-list-item
-                v-bind="props"
-              >
-                <v-container @click.stop="">
-                  <v-row>
-                    <v-col cols="6">
-                      <v-text-field v-model="block.name" :label="$t('editor.block.name')" hide-details density="compact"
-                                    variant="outlined">
-                        <template #prepend>
-                          <div class="block-index">
-                            {{ block.index }} - {{ block.uid }}
-                          </div>
-                        </template>
-                      </v-text-field>
-                    </v-col>
-                    <v-col cols="1">
-                      <v-menu :id="'atTheEndMenu-'+block.uid" location="bottom" @click.stop="">
-                        <template v-slot:activator="{ props }">
-                          <v-icon v-if="block.atTheEnd?.type === 'hold'" size="32" class="mt-1" v-bind="props">
-                            mdi-mouse
-                          </v-icon>
-                          <v-icon v-else-if="block.atTheEnd?.type === 'loop'" class="mt-1" size="32" v-bind="props">
-                            mdi-repeat-variant
-                          </v-icon>
-                          <v-icon v-else size="32" class="mt-1" v-bind="props">mdi-arrow-right-thick</v-icon>
-                        </template>
-                        <v-list>
-                          <v-list-item prepend-icon="mdi-arrow-right-thick" @click="setAtTheEnd(block, 'continue')">
-                            <v-list-item-title>{{ $t('editor.atTheEnd.continue') }}</v-list-item-title>
-                          </v-list-item>
-                          <v-list-item prepend-icon="mdi-mouse" @click="setAtTheEnd(block, 'hold')">
-                            <v-list-item-title>{{ $t('editor.atTheEnd.hold') }}</v-list-item-title>
-                          </v-list-item>
-                          <v-list-item prepend-icon="mdi-repeat-variant" @click="setAtTheEnd(block, 'loop')">
-                            <v-list-item-title>{{ $t('editor.atTheEnd.loop') }}</v-list-item-title>
-                          </v-list-item>
-                        </v-list>
-                      </v-menu>
-                    </v-col>
-                    <v-col cols="5" class="text-right">
-                      <v-icon :disabled="block.index === 1" size="32" @click="mergeUp(block)">mdi-arrow-expand-up
-                      </v-icon>
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-list-item>
-            </template>
+              <template v-for="slide in block.slides" :key="slide.absoluteIndex">
+                <div class="drag-marker"
+                     :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"
+                     @dragenter="handleSlideDragEnter($event, block, slide, true)"
+                     @dragleave="handleSlideDragLeave($event,  true)"
+                     @drop="drop($event, dragTarget)"
+                     @dragover.prevent>
 
-            <template v-for="slide in block.slides" :key="slide.absoluteIndex">
-              <div class="drag-marker"
-                   :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"
-                   @dragenter="handleSlideDragEnter($event, block, slide, true)"
-                   @dragleave="handleSlideDragLeave($event,  true)"
+                </div>
+
+                <v-list-item class="slide-box" :class="{ 'selected': reelSelectedItems.includes(slide) }"
+                             :draggable="true"
+                             @dragstart="reelDragStart($event, slide)"
+                             @dragend="dragEnd"
+                             @dragenter="handleSlideDragEnter($event, block, slide)"
+                             @dragleave="handleSlideDragLeave($event)"
+                             @drop="drop($event, dragTarget)"
+                             @dragover.prevent
+                             @click="reelSelectItem($event, slide)">
+                  <template #prepend>
+                    <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
+                           :src="slide.thumbnail" aspect-ratio="1"></v-img>
+                  </template>
+                  <template #append>
+                    <v-icon size="40">mdi-tag-edit</v-icon>
+                    <v-icon size="40">mdi-transition-masked</v-icon>
+                    <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>
+                    <div style="width: 10px"></div>
+                    <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>
+
+                  </template>
+                  <v-list-item-title class="font-weight-bold mb-2">
+                    {{ slide.inBlockIndex }} - {{ slide.imageName }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    <v-icon :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
+                    <v-icon :style="'color:'+ ((slide.trigger?.type === 'key') ? 'white' : 'gray')">mdi-mouse</v-icon>
+                  </v-list-item-subtitle>
+                </v-list-item>
+              </template>
+              <div class="drag-marker" :class="{ 'drag-marker-visible' : isDragTargetSelected( block, undefined) }"
+                   @dragenter="handleSlideDragEnter($event, block, undefined, true)"
+                   @dragleave="handleSlideDragLeave($event, true)"
                    @drop="drop($event, dragTarget)"
                    @dragover.prevent>
-
               </div>
 
-              <v-list-item class="slide-box"
-                           @dragenter="handleSlideDragEnter($event, block, slide)"
-                           @dragleave="handleSlideDragLeave($event)"
-                           @drop="drop($event, dragTarget)"
-                           @dragover.prevent>
-                <template #prepend>
-                  <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
-                         :src="slide.thumbnail" aspect-ratio="1"></v-img>
-                </template>
-                <template #append>
-                  <v-icon size="40">mdi-tag-edit</v-icon>
-                  <v-icon size="40">mdi-transition-masked</v-icon>
-                  <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>
-                  <div style="width: 10px"></div>
-                  <v-icon size="40">mdi-delete</v-icon>
-
-                </template>
-                <v-list-item-title class="font-weight-bold mb-2">
-                  {{ slide.inBlockIndex }} - {{ slide.imageName }}
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                  <v-icon :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
-                  <v-icon :style="'color:'+ ((slide.trigger?.type === 'key') ? 'white' : 'gray')">mdi-mouse</v-icon>
-                </v-list-item-subtitle>
-              </v-list-item>
-            </template>
-            <div class="drag-marker" :class="{ 'drag-marker-visible' : isDragTargetSelected( block, undefined) }"
-                 @dragenter="handleSlideDragEnter($event, block, undefined, true)"
-                 @dragleave="handleSlideDragLeave($event, true)"
-                 @drop="drop($event, dragTarget)"
-                 @dragover.prevent>
-            </div>
-
-          </v-list-group>
-        </v-list>
-        DT: {{ dragType }} - BC: {{ blockDragCounter }} - SC: {{ slideDragCounter }} - TT: {{ dragTarget?.type }} - TBI: {{ dragTarget?.block.index }} -
-        TIBI: {{ dragTarget?.nextSlide?.inBlockIndex }}
+            </v-list-group>
+          </v-list>
+        <div class="ma-2" style="display: none;">
+          DT: {{ dragType }} - BC: {{ blockDragCounter }} - SC: {{ slideDragCounter }} - TT: {{ dragTarget?.type }} - TBI:
+          {{ dragTarget?.block.index }} -
+          TIBI: {{ dragTarget?.nextSlide?.inBlockIndex }}
+        </div>
       </v-sheet>
+      <v-toolbar density="compact" class="basket-toolbar px-2" ref="basketToolbar" :style="'top:'+headerSize.height.value+'px' ">
+        <v-icon size="32" @click="selectAllInBasket" class="mr-2">mdi-checkbox-multiple-marked-outline</v-icon>
+        <v-icon size="32" @click="selectNoneInBasket" class="mr-2">mdi-checkbox-multiple-blank-outline</v-icon>
+        <v-spacer></v-spacer>
+      </v-toolbar>
       <v-sheet ref="basket" class="basket" variant="elevated" :style="boxHeight">
+
         <v-list v-if="basketList" class="basket-list">
           <v-list-item v-for="image in unusedItemsInBasket" :key="image.imageName"
                        class="my-1 slide-box" :class="{ 'selected': basketSelectedItems.includes(image) }"
@@ -182,9 +198,11 @@ import {
   VMenu,
   VRow,
   VSheet,
-  VTextField
+  VSpacer,
+  VTextField,
+  VToolbar
 } from 'vuetify/components'
-import { computed, onMounted, Ref, ref, toRaw, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, Ref, ref, toRaw, watchEffect } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
 import { BasketItem, Slide, SlideShowBlock, SlideShowInfo } from '@/entities/SlideShowTypes'
 import useEditorApi from '@/api/editorApi'
@@ -192,19 +210,23 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
 import { nextUID } from '@/entities/SlideShowUtils'
+import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
 const editorStore = useEditorStore()
+const createConfirmDialog = useConfirmDialog()!
 
 const slideShow: Ref<SlideShowInfo> = ref({ blocks: [], totalSlides: 0 })
 const header = ref()
+const reelToolbar = ref()
 
 const headerSize = useElementSize(header)
+const reelToolbarSize = useElementSize(reelToolbar)
 const windowSize = useWindowSize()
 
 const boxHeight = computed(() => {
-  return 'height:' + (windowSize.height.value - headerSize.height.value) + 'px'
+  return 'height:' + (windowSize.height.value - headerSize.height.value - reelToolbarSize.height.value) + 'px'
 })
 
 const openedBlocks = ref<number[]>([])
@@ -240,7 +262,6 @@ function scan() {
       const slideImageNames = slideShow.value.blocks.flatMap((block) => block.slides).map((slide) => slide.imageName)
       basketList.value = []
       response.images?.forEach((file) => {
-        console.log('file', file)
         basketList.value.push({
           imageName: file.fileName,
           thumbnail: undefined,
@@ -285,6 +306,8 @@ function mergeUp(block: SlideShowBlock) {
   }
 }
 
+const reelBlocks = ref()
+
 function splitBlock(block: SlideShowBlock, slide: Slide) {
   const ss = slideShow.value
   const i = indexOfBlock(block)
@@ -303,7 +326,10 @@ function splitBlock(block: SlideShowBlock, slide: Slide) {
   for (let p = i; p < ss.blocks.length; p++) {
     ss.blocks[p].index = p + 1
   }
-  openedBlocks.value.push(newBlock.uid)
+
+  nextTick(() => {
+    openedBlocks.value.push(newBlock.uid)
+  })
 }
 
 watchEffect(() => {
@@ -312,6 +338,17 @@ watchEffect(() => {
 
 const basketList = ref<BasketItem[]>([])
 const unusedItemsInBasket = computed(() => basketList.value.filter((item) => item.usedInSlideShow === false))
+
+function deleteSlide(slide: Slide) {
+  reelRemoveItems([slide])
+}
+
+function addBlock() {
+  const ss = slideShow.value
+  const newBlock: SlideShowBlock = { slides: [], index: ss.blocks.length + 1, uid: nextUID() }
+  ss.blocks.push(newBlock)
+  openedBlocks.value.push(newBlock.uid)
+}
 
 // =====================================================================================================================
 // Drag and drop base
@@ -328,8 +365,10 @@ enum DragType {
   REEL_REORDER = 'reel-reorder'
 }
 
-const dragType = ref<DragType|undefined>()
+const dragType = ref<DragType | undefined>()
 const dragHolderThumbnail = ref<string | undefined>()
+
+const dragTarget = ref<undefined | DragTargetInfo>()
 
 const blockDragCounter = ref(0)
 const slideDragCounter = ref(0)
@@ -424,13 +463,15 @@ function initializeDragHolder(event: DragEvent) {
   event.dataTransfer!.setDragImage(dragPreview, 60, 40)
 }
 
-function drop(event : DragEvent, target: DragTargetInfo | undefined) {
+function drop(event: DragEvent, target: DragTargetInfo | undefined) {
   event.preventDefault()
   event.stopPropagation()
   console.log('Dropped: ', toRaw(target))
   if (target) {
     if (dragType.value === DragType.BASKET_TO_REEL) {
       dropBasketToReel(target)
+    } else if (dragType.value === DragType.REEL_REORDER) {
+      dropReelReorder(target)
     }
   }
 }
@@ -439,6 +480,9 @@ function dragEnd(event: DragEvent) {
   event.preventDefault()
   const dragPreview = document.getElementById('dragHolder')!
   dragPreview.style.display = 'none'
+  if (dragType.value === DragType.REEL_REORDER && !dragTarget.value) {
+    reelRemoveItems(reelSelectedItems.value)
+  }
   clearDragTarget()
   blockDragCounter.value = 0
   slideDragCounter.value = 0
@@ -450,12 +494,24 @@ function isDragTargetSelected(block: SlideShowBlock, slide: Slide | undefined) {
   return block === dragTarget.value.block && slide === dragTarget.value.nextSlide
 }
 
+function findSlideByIndex(index: number) {
+  return slideShow.value.blocks.flatMap((block) => block.slides).find((slide) => slide.absoluteIndex === index)
+}
+
 // =====================================================================================================================
 // BASKET -> REEL - Drag and drop
 // =====================================================================================================================
 
 const basketSelectedItems = ref<BasketItem[]>([])
 let basketLastSelectedItemIndex: number = -1
+
+function selectAllInBasket() {
+  basketSelectedItems.value = [...unusedItemsInBasket.value]
+}
+
+function selectNoneInBasket() {
+  basketSelectedItems.value = []
+}
 
 function basketSelectItem(event: MouseEvent | KeyboardEvent, basketItem: BasketItem) {
   const itemIndex = unusedItemsInBasket.value.findIndex(item => item === basketItem)
@@ -486,8 +542,6 @@ function basketSelectItem(event: MouseEvent | KeyboardEvent, basketItem: BasketI
   basketLastSelectedItemIndex = itemIndex
 }
 
-const dragTarget = ref<undefined | DragTargetInfo>()
-
 function basketDragStart(event: DragEvent, image: BasketItem) {
   if (!basketSelectedItems.value.includes(image)) {
     if (event.ctrlKey) basketSelectItem(event, image)
@@ -500,7 +554,8 @@ function basketDragStart(event: DragEvent, image: BasketItem) {
 
 function dropBasketToReel(target: DragTargetInfo) {
   const block = target.block
-  const itemsToAdd : Slide[] = []
+  const itemsToAdd: Slide[] = []
+  reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
   basketSelectedItems.value.forEach((item) => {
     const slide = {
       imageName: item.imageName,
@@ -511,12 +566,119 @@ function dropBasketToReel(target: DragTargetInfo) {
     }
     itemsToAdd.push(slide)
     item.usedInSlideShow = true
+    reelSelectedItems.value.push(slide)
   })
   const insertBefore = target.nextSlide ? target.nextSlide.inBlockIndex! - 1 : block.slides.length
   block.slides.splice(insertBefore, 0, ...itemsToAdd)
   for (let i = insertBefore; i < block.slides.length; i++) {
     block.slides[i].inBlockIndex = i + 1
   }
+  basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
+}
+
+// =====================================================================================================================
+// REEL REORDER - Drag and drop
+// =====================================================================================================================
+
+const reelSelectedItems = ref<Slide[]>([])
+let reelLastSelectedItemIndex: number = -1
+
+function reelSelectItem(event: MouseEvent | KeyboardEvent, slide: Slide) {
+  const itemIndex = slide.absoluteIndex!
+
+  const index = reelSelectedItems.value.indexOf(slide)
+  if (event.shiftKey && reelLastSelectedItemIndex !== -1) {
+    // Shift+Click: Select range
+    const start = Math.min(reelLastSelectedItemIndex, itemIndex)
+    const end = Math.max(reelLastSelectedItemIndex, itemIndex)
+    if (!event.ctrlKey) {
+      reelSelectedItems.value = []
+    }
+    for (let i = start; i <= end; i++) {
+      reelSelectedItems.value.push(findSlideByIndex(i)!)
+    }
+  } else if (event.ctrlKey) {
+    // Ctrl+Click: Toggle selection
+    if (index !== -1) {
+      reelSelectedItems.value.splice(index, 1)
+    } else {
+      reelSelectedItems.value.push(slide)
+    }
+  } else {
+    // Single click: Select single item
+    reelSelectedItems.value = [slide]
+  }
+
+  reelLastSelectedItemIndex = itemIndex
+
+  console.log('Selected items', reelSelectedItems.value.map((s) => s.absoluteIndex))
+}
+
+function reelDragStart(event: DragEvent, slide: Slide) {
+  console.log('Drag start', slide.absoluteIndex)
+  if (!reelSelectedItems.value.includes(slide)) {
+    if (event.ctrlKey) reelSelectItem(event, slide)
+    else reelSelectedItems.value = [slide]
+  }
+  dragHolderThumbnail.value = reelSelectedItems.value[0]?.thumbnail
+  initializeDragHolder(event)
+  dragType.value = DragType.REEL_REORDER
+}
+
+function dropReelReorder(target: DragTargetInfo) {
+  console.log('Drop reel reorder', target)
+  reelSelectedItems.value.forEach((slide) => {
+    const block = slide.block
+    const index = block.slides.indexOf(slide)
+    if (index !== -1) {
+      block.slides.splice(index, 1)
+    }
+  })
+  const block = target.block
+  const insertBefore = target.nextSlide ? target.nextSlide.inBlockIndex! - 1 : block.slides.length
+  block.slides.splice(insertBefore, 0, ...reelSelectedItems.value)
+  updateSlideInfo()
+}
+
+function reelRemoveItems(items: Slide[]) {
+  createConfirmDialog({
+    title: '@editor.deleteSlide.title',
+    titleColor: 'red',
+    content: '@editor.deleteSlide.message',
+    buttons: ButtonSet.yesNo
+  }).then((button) => {
+    if (button === Button.YES) {
+      console.log('Reel remove items', items)
+      items.forEach((slide) => {
+        const block = slide.block
+        const index = block.slides.indexOf(slide)
+        if (index !== -1) {
+          block.slides.splice(index, 1)
+        }
+      })
+      basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
+      basketList.value
+        .filter((basketItem) => reelSelectedItems.value.some((item) => item.imageName === basketItem.imageName))
+        .forEach((item) => {
+          item.usedInSlideShow = false
+          basketSelectedItems.value.push(item)
+        })
+      updateSlideInfo()
+    }
+    reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
+  })
+}
+
+function updateSlideInfo() {
+  let absoluteIndex = 1
+  slideShow.value.blocks.forEach((block) => {
+    block.slides.forEach((slide, index) => {
+      slide.block = block
+      slide.inBlockIndex = index + 1
+      slide.blockIndex = block.index
+      slide.absoluteIndex = absoluteIndex++
+    })
+  })
 }
 
 </script>
@@ -524,7 +686,7 @@ function dropBasketToReel(target: DragTargetInfo) {
 <style scoped>
 
 .header {
-  background-color: #202872;
+  background-color: #1e1f38;
   color: whitesmoke;
 }
 
@@ -533,7 +695,22 @@ function dropBasketToReel(target: DragTargetInfo) {
   background-color: #333333;
   width: 50%;
   color: whitesmoke;
-  overflow-y: auto;
+  overflow-y: auto !important;
+}
+
+.reel-toolbar {
+  background-color: #333333;
+  width: 50%;
+  color: whitesmoke;
+}
+
+.basket-toolbar {
+  position: absolute;
+  background-color: #333333;
+  border-left: 1px solid whitesmoke;
+  width: 50%;
+  color: whitesmoke;
+  left: 50%;
 }
 
 .basket {
@@ -592,7 +769,7 @@ function dropBasketToReel(target: DragTargetInfo) {
 }
 
 .dragBox {
-  display: flex;
+  display: none;
   position: absolute;
 }
 

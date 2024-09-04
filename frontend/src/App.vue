@@ -1,23 +1,27 @@
 <template>
   <router-view/>
-<!--  <global-confirm-dialog ref="confirmDialog" ></global-confirm-dialog>-->
+  <global-confirm-dialog ref="confirmDialog" ></global-confirm-dialog>
   <global-snackbar :gap="30" :max-stack="8"></global-snackbar>
 </template>
 <script setup lang="ts">
 import GlobalSnackbar from '@/modules/snackbar/GlobalSnackbar.vue'
+import GlobalConfirmDialog from '@/modules/dialog/GlobalConfirmDialog.vue'
+import { onMounted, ref } from 'vue'
+import { useLocaleStore } from '@/stores/localeStore'
+import { registerConfirmDialog } from '@/modules/dialog/confirmDialog'
 
-// const confirmDialog = ref<typeof GlobalConfirmDialog>()
+const confirmDialog = ref<typeof GlobalConfirmDialog>()
 
-// const localeStore = useLocaleStore()
+const localeStore = useLocaleStore()
 
-// onMounted(() => {
-//   if (confirmDialog.value) {
-//     registerConfirmDialog(confirmDialog.value, {
-//       width: 600,
-//       buttonVariant: 'elevated'
-//     })
-//   }
-// })
+onMounted(() => {
+  if (confirmDialog.value) {
+    registerConfirmDialog(confirmDialog.value, {
+      width: 600,
+      buttonVariant: 'elevated'
+    })
+  }
+})
 
 </script>
 
