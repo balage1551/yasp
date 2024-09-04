@@ -82,6 +82,8 @@ export const messagesHU = merge({}, messagesCommon, {
   editor: {
     title: 'Szerkesztő',
     directory: 'Könyvtár',
+    name: 'Diavetítés neve',
+    info: '{blockCount} blokk, {totalCount} dia.',
     block: {
       name: 'Megnevezés'
     },

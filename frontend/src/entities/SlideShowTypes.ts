@@ -57,6 +57,7 @@ export type Slide = ImageSlideData & {
   // eslint-disable-next-line no-use-before-define
   block: SlideShowBlock
   thumbnail?: string | undefined
+  missing?: boolean
 }
 
 export type SlideShowBlockBase = {

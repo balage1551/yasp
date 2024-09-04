@@ -21,6 +21,7 @@ export const useEditorStore =
 
     return {
       path,
+      name,
       slideShow,
 
       setCurrentSlideShow

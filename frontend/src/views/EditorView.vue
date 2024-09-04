@@ -2,8 +2,8 @@
   <application-layout>
 
     <v-container fluid class="pa-0 ma-0 ">
-      <v-sheet ref="header" class="header" variant="elevated">
-        <v-container class="ma-0">
+      <v-sheet ref="header" class="header px-2 " variant="elevated" >
+        <v-container fluid class="ma-0" >
           <v-row>
             <v-col cols="4">
               <v-text-field variant="outlined" v-model="editorStore.path" :label="$t('editor.directory')"
@@ -13,12 +13,23 @@
                 </template>
               </v-text-field>
             </v-col>
-            <v-col cols="1">
+              <v-col cols="4">
+              <v-text-field variant="outlined" v-model="editorStore.name" :label="$t('editor.name')"
+                            hide-details>
+              </v-text-field>
+            </v-col>
+            <v-col cols="3">
+            </v-col>
+            <v-col cols="1" class="text-right" >
+              <v-btn class="mt-2" color="primary" @click="save">{{ $t('common.save' )}}</v-btn>
             </v-col>
           </v-row>
         </v-container>
       </v-sheet>
       <v-toolbar density="compact" class="reel-toolbar px-2" ref="reelToolbar">
+        <div class="info ml-2">
+          {{ $t('editor.info', { totalCount: slideShow.totalSlides, blockCount: slideShow.blocks.length }) }}
+        </div>
         <v-spacer></v-spacer>
           <v-icon size="32" @click="addBlock">mdi-folder-plus</v-icon>
       </v-toolbar>
@@ -102,6 +113,7 @@
                   <template #prepend>
                     <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
                            :src="slide.thumbnail" aspect-ratio="1"></v-img>
+                    <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>
                   </template>
                   <template #append>
                     <v-icon size="40">mdi-tag-edit</v-icon>
@@ -170,20 +182,10 @@
               <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
                      :src="image.thumbnail" aspect-ratio="1"></v-img>
             </template>
-            <template #append>
-              <!--                <v-icon size="40">mdi-tag-edit</v-icon>-->
-              <!--                <v-icon size="40">mdi-transition-masked</v-icon>-->
-              <!--                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
-              <!--                <div style="width: 10px"></div>-->
-              <!--                <v-icon size="40">mdi-delete</v-icon>-->
-
-            </template>
             <v-list-item-title class="font-weight-bold mb-2">
               {{ image.imageName }}
             </v-list-item-title>
             <v-list-item-subtitle>
-              <!--                <v-icon :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
-              <!--                <v-icon :style="'color:'+ ((slide.trigger?.type === 'key') ? 'white' : 'gray')">mdi-mouse</v-icon>-->
             </v-list-item-subtitle>
           </v-list-item>
         </v-list>
@@ -276,14 +278,19 @@ function scan() {
   editorApi.scanDirectory(editorStore.path).then((response) => {
     console.log('scan response', response)
     if (response.successful) {
-      const slideImageNames = slideShow.value.blocks.flatMap((block) => block.slides).map((slide) => slide.imageName)
+      const slideImageNames = new Map<string, Slide>()
+      slideShow.value.blocks.flatMap((block) => block.slides).forEach((slide) => slideImageNames.set(slide.imageName, slide))
       basketList.value = []
       response.images?.forEach((file) => {
+        const usedInSlideShow = slideImageNames.has(file.fileName)
         basketList.value.push({
           imageName: file.fileName,
           thumbnail: undefined,
-          usedInSlideShow: slideImageNames.indexOf(file.fileName) !== -1
+          usedInSlideShow
         })
+        if (usedInSlideShow) {
+          slideImageNames.delete(file.fileName)
+        }
         resourceApi.requestThumbnail(file.fileName).then((response) => {
           const b = basketList.value.find((i) => i.imageName === file.fileName)
           if (b) {
@@ -291,6 +298,10 @@ function scan() {
           }
         })
       })
+      console.log('MISSING', slideImageNames.keys())
+      for (const slide of slideImageNames.values()) {
+        slide.missing = true
+      }
     }
   })
 }
@@ -827,6 +838,11 @@ function updateSlideInfo() {
 
 .drag-marker-visible {
   background-color: #139ff7 !important;
+}
+
+.missing {
+  position: absolute;
+  left: 100px;
 }
 
 </style>
