@@ -122,16 +122,16 @@
 
           </v-list-group>
         </v-list>
-        {{ blockDragCounter }} - {{ slideDragCounter }} - {{ dragTarget?.type }} - {{ dragTarget?.block.index }} -
-        {{ dragTarget?.nextSlide?.inBlockIndex }}
+        DT: {{ dragType }} - BC: {{ blockDragCounter }} - SC: {{ slideDragCounter }} - TT: {{ dragTarget?.type }} - TBI: {{ dragTarget?.block.index }} -
+        TIBI: {{ dragTarget?.nextSlide?.inBlockIndex }}
       </v-sheet>
-      <v-sheet ref="bucket" class="bucket" variant="elevated" :style="boxHeight">
-        <v-list v-if="bucketList" class="bucket-list">
-          <v-list-item v-for="image in unusedItemsInBucket" :key="image.imageName"
-                       class="my-1 slide-box" :class="{ 'selected': selectedBucketItems.includes(image) }"
-                       @click="selectItem($event, image)"
+      <v-sheet ref="basket" class="basket" variant="elevated" :style="boxHeight">
+        <v-list v-if="basketList" class="basket-list">
+          <v-list-item v-for="image in unusedItemsInBasket" :key="image.imageName"
+                       class="my-1 slide-box" :class="{ 'selected': basketSelectedItems.includes(image) }"
+                       @click="basketSelectItem($event, image)"
                        :draggable="true"
-                       @dragstart="dragStart($event, image)"
+                       @dragstart="basketDragStart($event, image)"
                        @dragend="dragEnd">
             <template #prepend>
               <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
@@ -159,11 +159,11 @@
   </application-layout>
   <div id="dragHolder" class="dragBox">
     <div class="drag-label">
-      {{ $t('editor.drag', {count: selectedBucketItems.length}) }}
+      {{ $t('editor.drag', {count: basketSelectedItems.length}) }}
     </div>
-    <v-img v-if="selectedBucketItems.length > 5" class="drag-thumbnail thumbnail" style="left:13px; top:13px; "></v-img>
-    <v-img v-if="selectedBucketItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
-    <img :src="selectedBucketItems[0]?.thumbnail" alt="" class="drag-thumbnail thumbnail" style="left:5px; top:5px;">
+    <v-img v-if="basketSelectedItems.length > 5" class="drag-thumbnail thumbnail" style="left:13px; top:13px; "></v-img>
+    <v-img v-if="basketSelectedItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
+    <img :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail" style="left:5px; top:5px;">
   </div>
 </template>
 <script setup lang="ts">
@@ -186,7 +186,7 @@ import {
 } from 'vuetify/components'
 import { computed, onMounted, Ref, ref, toRaw, watchEffect } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
-import { BucketItem, Slide, SlideShowBlock, SlideShowInfo } from '@/entities/SlideShowTypes'
+import { BasketItem, Slide, SlideShowBlock, SlideShowInfo } from '@/entities/SlideShowTypes'
 import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
@@ -238,16 +238,16 @@ function scan() {
     console.log('scan response', response)
     if (response.successful) {
       const slideImageNames = slideShow.value.blocks.flatMap((block) => block.slides).map((slide) => slide.imageName)
-      bucketList.value = []
+      basketList.value = []
       response.images?.forEach((file) => {
         console.log('file', file)
-        bucketList.value.push({
+        basketList.value.push({
           imageName: file.fileName,
           thumbnail: undefined,
           usedInSlideShow: slideImageNames.indexOf(file.fileName) !== -1
         })
         resourceApi.requestThumbnail(file.fileName).then((response) => {
-          const b = bucketList.value.find((i) => i.imageName === file.fileName)
+          const b = basketList.value.find((i) => i.imageName === file.fileName)
           if (b) {
             b.thumbnail = URL.createObjectURL(response)
           }
@@ -310,47 +310,26 @@ watchEffect(() => {
   console.log('OB', [...openedBlocks.value])
 })
 
-const bucketList = ref<BucketItem[]>([])
-const unusedItemsInBucket = computed(() => bucketList.value.filter((item) => item.usedInSlideShow === false))
-const selectedBucketItems = ref<BucketItem[]>([])
-let lastSelectedBucketItemIndex: number = -1
+const basketList = ref<BasketItem[]>([])
+const unusedItemsInBasket = computed(() => basketList.value.filter((item) => item.usedInSlideShow === false))
 
-function selectItem(event: MouseEvent | KeyboardEvent, bucketItem: BucketItem) {
-  const itemIndex = unusedItemsInBucket.value.findIndex(item => item === bucketItem)
-
-  const index = selectedBucketItems.value.indexOf(bucketItem)
-  if (event.shiftKey && lastSelectedBucketItemIndex !== -1) {
-    // Shift+Click: Select range
-    const start = Math.min(lastSelectedBucketItemIndex, itemIndex)
-    const end = Math.max(lastSelectedBucketItemIndex, itemIndex)
-    if (!event.ctrlKey) {
-      selectedBucketItems.value = []
-    }
-    for (let i = start; i <= end; i++) {
-      selectedBucketItems.value.push(unusedItemsInBucket.value[i])
-    }
-  } else if (event.ctrlKey) {
-    // Ctrl+Click: Toggle selection
-    if (index !== -1) {
-      selectedBucketItems.value.splice(index, 1)
-    } else {
-      selectedBucketItems.value.push(bucketItem)
-    }
-  } else {
-    // Single click: Select single item
-    selectedBucketItems.value = [bucketItem]
-  }
-
-  lastSelectedBucketItemIndex = itemIndex
-}
+// =====================================================================================================================
+// Drag and drop base
+// =====================================================================================================================
 
 type DragTargetInfo = {
   block: SlideShowBlock
   nextSlide: Slide | undefined
   type: 'block' | 'slide' | 'marker'
 }
-const topImage = ref<BucketItem | undefined>()
-const dragTarget = ref<undefined | DragTargetInfo>()
+
+enum DragType {
+  BASKET_TO_REEL = 'basket-to-reel',
+  REEL_REORDER = 'reel-reorder'
+}
+
+const dragType = ref<DragType|undefined>()
+const dragHolderThumbnail = ref<string | undefined>()
 
 const blockDragCounter = ref(0)
 const slideDragCounter = ref(0)
@@ -438,14 +417,7 @@ function handleSlideDragLeave(event: DragEvent, isMarker: boolean = false) {
   event.preventDefault()
 }
 
-function dragStart(event: DragEvent, image: BucketItem) {
-  if (!selectedBucketItems.value.includes(image)) {
-    if (event.ctrlKey) selectItem(event, image)
-    else selectedBucketItems.value = [image]
-  }
-
-  topImage.value = image
-
+function initializeDragHolder(event: DragEvent) {
   const dragPreview = document.getElementById('dragHolder')!
   dragPreview.style.display = 'flex'
 
@@ -457,23 +429,8 @@ function drop(event : DragEvent, target: DragTargetInfo | undefined) {
   event.stopPropagation()
   console.log('Dropped: ', toRaw(target))
   if (target) {
-    const block = target.block
-    const itemsToAdd : Slide[] = []
-    selectedBucketItems.value.forEach((item) => {
-      const slide = {
-        imageName: item.imageName,
-        thumbnail: item.thumbnail,
-        block,
-        blockIndex: block.index,
-        inBlockIndex: block.slides.length + 1
-      }
-      itemsToAdd.push(slide)
-      item.usedInSlideShow = true
-    })
-    const insertBefore = target.nextSlide ? target.nextSlide.inBlockIndex! - 1 : block.slides.length
-    block.slides.splice(insertBefore, 0, ...itemsToAdd)
-    for (let i = insertBefore; i < block.slides.length; i++) {
-      block.slides[i].inBlockIndex = i + 1
+    if (dragType.value === DragType.BASKET_TO_REEL) {
+      dropBasketToReel(target)
     }
   }
 }
@@ -485,6 +442,7 @@ function dragEnd(event: DragEvent) {
   clearDragTarget()
   blockDragCounter.value = 0
   slideDragCounter.value = 0
+  dragType.value = undefined
 }
 
 function isDragTargetSelected(block: SlideShowBlock, slide: Slide | undefined) {
@@ -492,9 +450,74 @@ function isDragTargetSelected(block: SlideShowBlock, slide: Slide | undefined) {
   return block === dragTarget.value.block && slide === dragTarget.value.nextSlide
 }
 
-// function swap(block: Block, direction: number) {
-//
-// }
+// =====================================================================================================================
+// BASKET -> REEL - Drag and drop
+// =====================================================================================================================
+
+const basketSelectedItems = ref<BasketItem[]>([])
+let basketLastSelectedItemIndex: number = -1
+
+function basketSelectItem(event: MouseEvent | KeyboardEvent, basketItem: BasketItem) {
+  const itemIndex = unusedItemsInBasket.value.findIndex(item => item === basketItem)
+
+  const index = basketSelectedItems.value.indexOf(basketItem)
+  if (event.shiftKey && basketLastSelectedItemIndex !== -1) {
+    // Shift+Click: Select range
+    const start = Math.min(basketLastSelectedItemIndex, itemIndex)
+    const end = Math.max(basketLastSelectedItemIndex, itemIndex)
+    if (!event.ctrlKey) {
+      basketSelectedItems.value = []
+    }
+    for (let i = start; i <= end; i++) {
+      basketSelectedItems.value.push(unusedItemsInBasket.value[i])
+    }
+  } else if (event.ctrlKey) {
+    // Ctrl+Click: Toggle selection
+    if (index !== -1) {
+      basketSelectedItems.value.splice(index, 1)
+    } else {
+      basketSelectedItems.value.push(basketItem)
+    }
+  } else {
+    // Single click: Select single item
+    basketSelectedItems.value = [basketItem]
+  }
+
+  basketLastSelectedItemIndex = itemIndex
+}
+
+const dragTarget = ref<undefined | DragTargetInfo>()
+
+function basketDragStart(event: DragEvent, image: BasketItem) {
+  if (!basketSelectedItems.value.includes(image)) {
+    if (event.ctrlKey) basketSelectItem(event, image)
+    else basketSelectedItems.value = [image]
+  }
+  dragHolderThumbnail.value = basketSelectedItems.value[0]?.thumbnail
+  initializeDragHolder(event)
+  dragType.value = DragType.BASKET_TO_REEL
+}
+
+function dropBasketToReel(target: DragTargetInfo) {
+  const block = target.block
+  const itemsToAdd : Slide[] = []
+  basketSelectedItems.value.forEach((item) => {
+    const slide = {
+      imageName: item.imageName,
+      thumbnail: item.thumbnail,
+      block,
+      blockIndex: block.index,
+      inBlockIndex: block.slides.length + 1
+    }
+    itemsToAdd.push(slide)
+    item.usedInSlideShow = true
+  })
+  const insertBefore = target.nextSlide ? target.nextSlide.inBlockIndex! - 1 : block.slides.length
+  block.slides.splice(insertBefore, 0, ...itemsToAdd)
+  for (let i = insertBefore; i < block.slides.length; i++) {
+    block.slides[i].inBlockIndex = i + 1
+  }
+}
 
 </script>
 
@@ -513,7 +536,7 @@ function isDragTargetSelected(block: SlideShowBlock, slide: Slide | undefined) {
   overflow-y: auto;
 }
 
-.bucket {
+.basket {
   position: absolute;
   background-color: #333333;
   border-left: 1px solid whitesmoke;
@@ -523,7 +546,7 @@ function isDragTargetSelected(block: SlideShowBlock, slide: Slide | undefined) {
   overflow-y: auto;
 }
 
-.reel-list, .bucket-list {
+.reel-list, .basket-list {
   text-align: left;
   margin: 2px 5px;
   background-color: #0d0d0d !important;

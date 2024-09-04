@@ -85,7 +85,7 @@ export type SlideShowInfo = {
   totalSlides: number
 }
 
-export type BucketItem = {
+export type BasketItem = {
   imageName: string
   thumbnail?: string | undefined
   usedInSlideShow: boolean
