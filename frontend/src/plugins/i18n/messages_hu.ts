@@ -90,6 +90,7 @@ export const messagesHU = merge({}, messagesCommon, {
       hold: 'Megállás',
       loop: 'Ismétlés'
     },
+    drag: '{count} kép',
   },
   slideShowInfo: {
     title: 'A rendelkezésre álló diavetítések',

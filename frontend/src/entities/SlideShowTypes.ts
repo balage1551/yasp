@@ -56,7 +56,7 @@ export type Slide = ImageSlideData & {
   absoluteIndex?: number
   // eslint-disable-next-line no-use-before-define
   block: SlideShowBlock
-  thumbnail?: URL | undefined
+  thumbnail?: string | undefined
 }
 
 export type SlideShowBlockBase = {
@@ -87,6 +87,6 @@ export type SlideShowInfo = {
 
 export type BucketItem = {
   imageName: string
-  thumbnail?: URL | undefined
+  thumbnail?: string | undefined
   usedInSlideShow: boolean
 }
