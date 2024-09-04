@@ -116,7 +116,24 @@
                   </v-list-item-title>
                   <v-list-item-subtitle>
                     <v-icon :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
-                    <v-icon :style="'color:'+ ((slide.trigger?.type === 'key') ? 'white' : 'gray')">mdi-mouse</v-icon>
+                    <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">
+                      <template v-slot:activator="{ props }">
+                        <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>
+                        <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>
+                        <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>
+                      </template>
+                      <v-list>
+                        <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">
+                          <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">
+                          <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">
+                          <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </v-list-item-subtitle>
                 </v-list-item>
               </template>
@@ -348,6 +365,16 @@ function addBlock() {
   const newBlock: SlideShowBlock = { slides: [], index: ss.blocks.length + 1, uid: nextUID() }
   ss.blocks.push(newBlock)
   openedBlocks.value.push(newBlock.uid)
+}
+
+function setTransition(slide: Slide, type: 'continue' | 'hold' | 'holdOnce') {
+  if (type === 'continue') {
+    delete slide.trigger
+  } else if (type === 'hold') {
+    slide.trigger = { type: 'key' }
+  } else if (type === 'holdOnce') {
+    slide.trigger = { type: 'key', onlyOnce: true }
+  }
 }
 
 // =====================================================================================================================

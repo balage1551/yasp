@@ -95,6 +95,11 @@ export const messagesHU = merge({}, messagesCommon, {
       title: 'Diák törlése',
       message: 'Biztosan törli a kiválasztott diákat?'
     },
+    transition: {
+      continue: 'Folytatás',
+      hold: 'Megállás',
+      holdOnce: 'Megállás első alkalommal',
+    }
   },
   slideShowInfo: {
     title: 'A rendelkezésre álló diavetítések',
