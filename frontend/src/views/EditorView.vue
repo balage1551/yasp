@@ -228,8 +228,9 @@ import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
-import { nextUID } from '@/entities/SlideShowUtils'
+import { nextUID, toData } from '@/entities/SlideShowUtils'
 import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
+import useSlideShowApi from '@/api/slideShowApi'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -417,9 +418,9 @@ function clearDragTarget() {
 }
 
 function handleBlockDragEnter(event: DragEvent, block: SlideShowBlock) {
-  if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
-    blockDragCounter.value++
-  }
+  // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
+  blockDragCounter.value++
+  // }
   event.preventDefault()
   console.log('Drag enter on block', block.index, blockDragCounter.value)
   const newTarget: DragTargetInfo = {
@@ -435,60 +436,60 @@ function handleBlockDragEnter(event: DragEvent, block: SlideShowBlock) {
 }
 
 function handleBlockDragLeave(event: DragEvent, block: SlideShowBlock) {
-  if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
-    blockDragCounter.value--
-    if (blockDragCounter.value <= 0) {
-      if (dragTarget.value?.type === 'block') {
-        console.log('Drag leave on block', block.index, blockDragCounter.value, dragTarget.value?.type)
-        clearDragTarget()
-        blockDragCounter.value = 0
-      }
+  // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
+  blockDragCounter.value--
+  if (blockDragCounter.value <= 0) {
+    if (dragTarget.value?.type === 'block') {
+      console.log('Drag leave on block', block.index, blockDragCounter.value, dragTarget.value?.type)
+      clearDragTarget()
+      blockDragCounter.value = 0
     }
   }
+  // }
   event.preventDefault()
 }
 
 function handleSlideDragEnter(event: DragEvent, block: SlideShowBlock, slide: Slide | undefined, isMarker: boolean = false) {
-  if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
-    slideDragCounter.value++
-    console.log('Drag enter on slide', isMarker, block?.index, slide?.inBlockIndex, slideDragCounter.value)
-    event.stopPropagation()
-    event.preventDefault()
-    let newTarget: DragTargetInfo
-    const isUp = event.offsetY < 40
-    if (isUp) {
-      newTarget = {
-        block,
-        nextSlide: slide,
-        type: isMarker ? 'marker' : 'slide'
-      }
-    } else {
-      const nextIndex = (slide === undefined || slide.inBlockIndex! === block.slides.length) ? undefined : slide.inBlockIndex!
-      const nextSlide = nextIndex === undefined ? undefined : block.slides[nextIndex]
-      newTarget = {
-        block,
-        nextSlide,
-        type: isMarker ? 'marker' : 'slide'
-      }
+  // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
+  slideDragCounter.value++
+  console.log('Drag enter on slide', isMarker, block?.index, slide?.inBlockIndex, slideDragCounter.value)
+  event.stopPropagation()
+  event.preventDefault()
+  let newTarget: DragTargetInfo
+  const isUp = event.offsetY < 40
+  if (isUp) {
+    newTarget = {
+      block,
+      nextSlide: slide,
+      type: isMarker ? 'marker' : 'slide'
     }
-    if (newTarget.type === dragTarget.value?.type && newTarget.block === dragTarget.value?.block && newTarget.nextSlide === dragTarget.value?.nextSlide) {
-      return
+  } else {
+    const nextIndex = (slide === undefined || slide.inBlockIndex! === block.slides.length) ? undefined : slide.inBlockIndex!
+    const nextSlide = nextIndex === undefined ? undefined : block.slides[nextIndex]
+    newTarget = {
+      block,
+      nextSlide,
+      type: isMarker ? 'marker' : 'slide'
     }
-    console.log('Drag target', newTarget.block.index, newTarget.nextSlide?.inBlockIndex)
-    dragTarget.value = newTarget
   }
+  if (newTarget.type === dragTarget.value?.type && newTarget.block === dragTarget.value?.block && newTarget.nextSlide === dragTarget.value?.nextSlide) {
+    return
+  }
+  console.log('Drag target', newTarget.block.index, newTarget.nextSlide?.inBlockIndex)
+  dragTarget.value = newTarget
+  // }
 }
 
 function handleSlideDragLeave(event: DragEvent, isMarker: boolean = false) {
-  if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
-    slideDragCounter.value--
-    if (slideDragCounter.value <= 0) {
-      if (dragTarget.value?.type === (isMarker ? 'marker' : 'slide')) {
-        console.log('Drag leave slide', isMarker)
-        clearDragTarget()
-        slideDragCounter.value = 0
-      }
+  // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
+  slideDragCounter.value--
+  if (slideDragCounter.value <= 0) {
+    if (dragTarget.value?.type === (isMarker ? 'marker' : 'slide')) {
+      console.log('Drag leave slide', isMarker)
+      clearDragTarget()
+      slideDragCounter.value = 0
     }
+    // }
   }
   event.stopPropagation()
   event.preventDefault()
@@ -716,6 +717,13 @@ function updateSlideInfo() {
       slide.blockIndex = block.index
       slide.absoluteIndex = absoluteIndex++
     })
+  })
+}
+
+function save() {
+  const data = toData(slideShow.value)
+  useSlideShowApi().saveSlideShow(editorStore.path, editorStore.name, data).then((response) => {
+    console.log('Save response', response)
   })
 }
 

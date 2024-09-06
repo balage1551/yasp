@@ -1,5 +1,7 @@
 package hu.vissy.yasp.slideshow
 
+import com.fasterxml.jackson.databind.JsonNode
+
 data class SlideShowListItemDTO (
     val name: String
 )
@@ -13,4 +15,11 @@ data class SlideShowListResponseDTO (
 data class SlideShowRequestDTO (
     val path: String,
     val name: String
+)
+
+
+data class SlideShowSaveRequestDTO (
+    val path: String,
+    val name: String,
+    val data: JsonNode
 )

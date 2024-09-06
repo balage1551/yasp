@@ -28,9 +28,22 @@ function requestSlideShow(path: string, name: string): Promise<SlideShowData> {
   })
 }
 
+function saveSlideShow(path: string, name: string, data: SlideShowData): Promise<string> {
+  return request({
+    url: '/slide-show/save',
+    method: 'post',
+    data: {
+      path,
+      name,
+      data
+    }
+  })
+}
+
 const slideShowApiInstance = {
   requestSlideShow,
-  listSlideShows
+  listSlideShows,
+  saveSlideShow
 }
 
 export default function useSlideShowApi() {

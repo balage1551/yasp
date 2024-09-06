@@ -1,4 +1,4 @@
-import { Slide, SlideShowBlock, SlideShowData, SlideShowInfo } from '@/entities/SlideShowTypes'
+import { ImageSlideData, Slide, SlideShowBlock, SlideShowBlockData, SlideShowData, SlideShowInfo } from '@/entities/SlideShowTypes'
 
 let uidCounter = 0
 
@@ -37,4 +37,39 @@ export function processSlideShowData(data: SlideShowData) : SlideShowInfo {
   }
 
   return info
+}
+
+export function toData(slideShow: SlideShowInfo) : SlideShowData {
+  const data: SlideShowData = {
+    blocks: []
+  }
+  slideShow.blocks.forEach(block => {
+    const blockData : SlideShowBlockData = {
+      name: block.name ?? '',
+      slides: []
+    }
+    if (block.transition) {
+      blockData.transition = block.transition
+    }
+    if (block.trigger) {
+      blockData.trigger = block.trigger
+    }
+    if (block.atTheEnd) {
+      blockData.atTheEnd = block.atTheEnd
+    }
+    block.slides.forEach(slide => {
+      const slideData : ImageSlideData = {
+        imageName: slide.imageName
+      }
+      if (slide.label) {
+        slideData.label = slide.label
+      }
+      if (slide.trigger) {
+        slideData.trigger = slide.trigger
+      }
+      blockData.slides.push(slideData)
+    })
+    data.blocks.push(blockData)
+  })
+  return data
 }
