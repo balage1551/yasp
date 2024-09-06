@@ -113,5 +113,19 @@ export const messagesHU = merge({}, messagesCommon, {
     },
     play: 'Lejátszás',
   },
-
+  labelEditor: {
+    title: 'Felirat szerkesztő',
+    text: 'Szöveg',
+    size: 'Betűméret',
+    top: 'Függőleges pozíció',
+    left: 'Vízszintes pozíció',
+    color: 'Szín',
+    outlined: 'Körvonal',
+    outline: {
+      width: 'Vastagság',
+      color: 'Szín'
+    },
+    save: 'Mentés',
+    remove: 'Eltávolítás',
+  }
 })

@@ -116,8 +116,6 @@
                     <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>
                   </template>
                   <template #append>
-                    <v-icon size="40">mdi-tag-edit</v-icon>
-                    <v-icon size="40">mdi-transition-masked</v-icon>
                     <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>
                     <div style="width: 10px"></div>
                     <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>
@@ -127,7 +125,7 @@
                     {{ slide.inBlockIndex }} - {{ slide.imageName }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    <v-icon :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
+                    <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
                     <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">
                       <template v-slot:activator="{ props }">
                         <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>
@@ -200,6 +198,7 @@
     <v-img v-if="basketSelectedItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
     <img :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail" style="left:5px; top:5px;">
   </div>
+  <label-editor-dialog ref="labelEditor"></label-editor-dialog>
 </template>
 <script setup lang="ts">
 
@@ -231,6 +230,7 @@ import useResourceApi from '@/api/resourceApi'
 import { nextUID, toData } from '@/entities/SlideShowUtils'
 import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
 import useSlideShowApi from '@/api/slideShowApi'
+import LabelEditorDialog from '@/dialogs/LabelEditorDialog.vue'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -725,6 +725,13 @@ function save() {
   useSlideShowApi().saveSlideShow(editorStore.path, editorStore.name, data).then((response) => {
     console.log('Save response', response)
   })
+}
+
+const labelEditor = ref<typeof LabelEditorDialog>()
+
+function editLabel(slide: Slide) {
+  console.log('Edit label', slide, labelEditor.value)
+  labelEditor.value?.open(slide)
 }
 
 </script>

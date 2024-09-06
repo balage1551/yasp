@@ -13,6 +13,7 @@ import { LabelInfo, SlideShowTypes } from '@/entities/SlideShowTypes'
 import { computed, nextTick, ref, watchEffect } from 'vue'
 import useResourceApi from '@/api/resourceApi'
 import { useSlideStore } from '@/stores/slideStore'
+import { labelStyles } from '@/entities/SlideShowUtils'
 
 const props = withDefaults(defineProps<{
   slideInfo: SlideShowTypes | undefined
@@ -45,53 +46,7 @@ watchEffect(async () => {
 })
 
 const labelStyle = computed(() => {
-  const l = label.value
-  // console.log('labelStyle', l)
-  if (!l) {
-    return ''
-  }
-  let styles = ''
-  const size = l.size ?? slideStore.labelDefaults.size
-  if (size) {
-    if (size.endsWith('%')) {
-      styles += `font-size: ${size.substring(0, size.length - 1)}vw;`
-    } else {
-      styles += `font-size: ${size}pt;`
-    }
-  }
-
-  const color = l.color ?? slideStore.labelDefaults.color
-  if (color) {
-    styles += `color: ${color};`
-  }
-
-  const top = l.top ?? slideStore.labelDefaults.top
-  if (top) {
-    if (top.endsWith('%')) {
-      styles += `margin-top: ${top.substring(0, top.length - 1)}vh;`
-    } else {
-      styles += `margin-top: ${top}px;`
-    }
-  }
-
-  const left = l.left ?? slideStore.labelDefaults.left
-  if (left) {
-    if (left.endsWith('%')) {
-      styles += `margin-left: ${left.substring(0, left.length - 1)}vw;`
-    } else {
-      styles += `margin-left: ${left}px;`
-    }
-  }
-
-  const outlined = l.outlined ?? slideStore.labelDefaults.outlined
-  if (outlined) {
-    const w = outlined.width ?? slideStore.labelDefaults.outlined?.width
-    const c = outlined.color ?? slideStore.labelDefaults.outlined?.color
-    styles += `text-shadow: -${w}px -${w}px 0 ${c}, ${w}px -${w}px 0 ${c},
-    -${w}px ${w}px 0 ${c}, ${w}px ${w}px 0 ${c};`
-  }
-
-  return styles
+  return labelStyles(label.value, slideStore.labelDefaults)
 })
 
 </script>

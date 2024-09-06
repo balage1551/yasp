@@ -1,13 +1,15 @@
+export type OutlineStyle = {
+  color?: string | undefined
+  width?: number | undefined
+}
+
 export type LabelInfo = {
   text: string
   size?: string | undefined
   color?: string | undefined
   top?: string | undefined
   left?: string | undefined
-  outlined?: {
-    color?: string | undefined
-    width?: number | undefined
-  }
+  outlined?: 'default' | OutlineStyle
 }
 
 export type CrossFadeTransition = {

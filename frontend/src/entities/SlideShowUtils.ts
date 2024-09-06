@@ -1,4 +1,5 @@
-import { ImageSlideData, Slide, SlideShowBlock, SlideShowBlockData, SlideShowData, SlideShowInfo } from '@/entities/SlideShowTypes'
+import { ImageSlideData, LabelInfo, OutlineStyle, Slide, SlideShowBlock, SlideShowBlockData, SlideShowData, SlideShowInfo } from '@/entities/SlideShowTypes'
+import { toNumber } from 'lodash'
 
 let uidCounter = 0
 
@@ -37,6 +38,62 @@ export function processSlideShowData(data: SlideShowData) : SlideShowInfo {
   }
 
   return info
+}
+
+export function labelStyles(l: LabelInfo | undefined, labelDefaults: LabelInfo, scale: number = 100) : string {
+  function scaleValue(v: string | number, trim: number = 0) {
+    if (typeof v === 'number') {
+      return v * scale / 100
+    } else {
+      return toNumber(v.substring(0, v.length - trim)) * scale / 100
+    }
+  }
+  // console.log('labelStyle', l)
+  if (!l) {
+    return ''
+  }
+  let styles = ''
+  const size = l.size ?? labelDefaults.size
+  if (size) {
+    if (size.endsWith('%')) {
+      styles += `font-size: ${scaleValue(size, 1)}vw;`
+    } else {
+      styles += `font-size: ${size}pt;`
+    }
+  }
+
+  const color = l.color ?? labelDefaults.color
+  if (color) {
+    styles += `color: ${color};`
+  }
+
+  const top = l.top ?? labelDefaults.top
+  if (top) {
+    if (top.endsWith('%')) {
+      styles += `margin-top: ${scaleValue(top, 1)}vh;`
+    } else {
+      styles += `margin-top: ${scaleValue(top)}px;`
+    }
+  }
+
+  const left = l.left ?? labelDefaults.left
+  if (left) {
+    if (left.endsWith('%')) {
+      styles += `margin-left: ${scaleValue(left, 1)}vw;`
+    } else {
+      styles += `margin-left: ${scaleValue(left)}px;`
+    }
+  }
+
+  const outlined : OutlineStyle | undefined = (l.outlined === 'default') ? labelDefaults.outlined as OutlineStyle : l.outlined
+  if (outlined) {
+    const w = scaleValue(outlined.width ?? 1)
+    const c = outlined.color ?? '#000000'
+    styles += `text-shadow: -${w}px -${w}px 0 ${c}, ${w}px -${w}px 0 ${c},
+    -${w}px ${w}px 0 ${c}, ${w}px ${w}px 0 ${c};`
+  }
+
+  return styles
 }
 
 export function toData(slideShow: SlideShowInfo) : SlideShowData {
