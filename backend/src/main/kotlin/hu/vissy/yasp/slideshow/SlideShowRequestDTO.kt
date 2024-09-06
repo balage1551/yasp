@@ -8,6 +8,7 @@ data class SlideShowListItemDTO (
 
 data class SlideShowListResponseDTO (
     val path: String,
+    val editable: Boolean,
     val slideShows: List<SlideShowListItemDTO>
 )
 

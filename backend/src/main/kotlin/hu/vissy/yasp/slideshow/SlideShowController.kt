@@ -24,6 +24,7 @@ class SlideShowController : BaseController() {
     fun list(): ResponseEntity<SlideShowListResponseDTO> {
         val rootPath: Path = Path.of(arguments.path)
         val slideShowListResponseDTO = SlideShowListResponseDTO(arguments.path,
+            !arguments.editorDisabled,
             Files.list(rootPath)
                 .filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".yasp.json") }
                 .map { SlideShowListItemDTO(it.fileName.toString().substringBeforeLast(".yasp.json")) }
@@ -46,6 +47,9 @@ class SlideShowController : BaseController() {
 
     @PostMapping("/save")
     fun save(@RequestBody @Validated request: SlideShowSaveRequestDTO): ResponseEntity<String> {
+        if (arguments.editorDisabled) {
+            return ResponseEntity("", HttpStatus.FORBIDDEN)
+        }
         log.info("Requesting slideShow save: ${request.path} ${request.name}\n${request.data}")
         val slideShowDefinitionFile: Path = Path.of("${request.path}/${request.name}.yasp.json")
         val backupSlideShowDefinitionFile: Path = Path.of("${request.path}/${request.name}.yasp.old.json")

@@ -1,5 +1,6 @@
 package hu.vissy.yasp.editor
 
+import hu.vissy.yasp.arguments
 import hu.vissy.yasp.module.web.BaseController
 import hu.vissy.yasp.resource.ResourceController
 import org.slf4j.LoggerFactory
@@ -24,6 +25,9 @@ class EditorController : BaseController() {
 
     @PostMapping("/scan")
     fun scanDirectory(@RequestBody @Validated request: ScanRequestDTO): ResponseEntity<ScanResultDTO> {
+        if (arguments.editorDisabled) {
+            return ResponseEntity(ScanResultDTO(false), HttpStatus.FORBIDDEN)
+        }
         log.info("Requesting scan: ${request.path}")
         val dir: Path = Path.of(request.path)
         return if (Files.exists(dir) && Files.isDirectory(dir)) {

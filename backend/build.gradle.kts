@@ -3,6 +3,9 @@
 //import org.hidetake.groovy.ssh.core.RunHandler
 //import org.hidetake.groovy.ssh.session.SessionHandler
 import com.github.gradle.node.npm.task.NpmTask
+import org.hidetake.groovy.ssh.core.Remote
+import org.hidetake.groovy.ssh.core.RunHandler
+import org.hidetake.groovy.ssh.session.SessionHandler
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -14,7 +17,7 @@ plugins {
     kotlin("kapt") version "2.0.20"
     id("com.github.node-gradle.node") version "7.0.1"
     id("war")
-//    id("org.hidetake.ssh") version "2.11.2"
+    id("org.hidetake.ssh") version "2.11.2"
 //    id("com.github.monosoul.markdown.page.generator") version "2.4.0.0"
     application
 }
@@ -160,27 +163,27 @@ tasks {
 //        dependsOn(copyDocAssets)
 //    }
 
-//    val deploy = create(name = "deployToServer") {
-//        dependsOn(named("bootDistZip")) //, generateDocHtml)
-//
-//        group = "deploy"
-//
-//        val pi2 = Remote(
-//                mapOf<String, String>("host" to "192.168.1.193",
-//                                      "user" to "balage",
-//                                      "password" to "Alma1234"))
-//
-//        doLast {
-//            ssh.run(delegateClosureOf<RunHandler> {
-//                session(pi2, delegateClosureOf<SessionHandler> {
-//                    put(hashMapOf(
-//                        "from" to getByName<Zip>("bootDistZip").archiveFile.get().asFile,
-//                        "into" to "/home/balage/hm2/release"))
-//                    execute("/home/balage/hm2/install.sh")
-//                })
-//            })
-//        }
-//    }
+    val deploy = create(name = "deployToServer") {
+        dependsOn(named("bootDistZip")) //, generateDocHtml)
+
+        group = "deploy"
+
+        val pi2 = Remote(
+                mapOf<String, String>("host" to "192.168.1.64",
+                                      "user" to "balage",
+                                      "password" to "Alma1234"))
+
+        doLast {
+            ssh.run(delegateClosureOf<RunHandler> {
+                session(pi2, delegateClosureOf<SessionHandler> {
+                    put(hashMapOf(
+                        "from" to getByName<Zip>("bootDistZip").archiveFile.get().asFile,
+                        "into" to "/home/balage/yasp/release"))
+                    execute("/home/balage/yasp/install.sh")
+                })
+            })
+        }
+    }
 }
 
 

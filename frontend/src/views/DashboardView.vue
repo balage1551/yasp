@@ -3,21 +3,21 @@
 
     <v-container fluid class="pa-0 ma-0 ">
       <div class="image-container">
-        <v-card v-if="slideShowList.length > 0 && !play" class="slide-show-info">
+        <v-card v-if="!play" class="slide-show-info">
           <v-card-title class="slide-show-info-title">
             {{ $t('slideShowInfo.title') }}
-            <v-btn @click="play = true" color="gray" class="float-end" variant="flat">{{
+            <v-btn v-if="editable" @click="play = true" color="gray" class="float-end" variant="flat">{{
                 $t('slideShowInfo.new')
               }}
             </v-btn>
           </v-card-title>
-          <v-card-text class="slide-show-info-details">
+          <v-card-text class="slide-show-info-details" v-if="slideShowList.length > 0">
             <table>
               <tr v-for="ss in slideShowList" :key="ss.name">
                 <td class="info-label">{{ ss.name }}</td>
                 <td class="info-value">
                   <v-btn @click="startPlay(ss)" color="primary" variant="flat">{{ $t('slideShowInfo.play') }}</v-btn>
-                  <v-btn @click="startEditor(ss)" color="green" variant="flat" class="ml-5">{{
+                  <v-btn v-if="editable" @click="startEditor(ss)" color="green" variant="flat" class="ml-5">{{
                       $t('slideShowInfo.edit')
                     }}
                   </v-btn>
@@ -49,12 +49,15 @@ const slideShow: ShallowRef<undefined | SlideShowInfo> = shallowRef()
 const play = ref(false)
 
 const path = ref<string>('')
+const editable = ref<boolean>(false)
 const slideShowList = ref<SlideShowListItem[]>([])
 
 onMounted(() => {
   useSlideShowApi().listSlideShows().then((response) => {
     console.log('response', response)
     path.value = response.path
+    useEditorStore().enabled = response.editable
+    editable.value = response.editable
     slideShowList.value = response.slideShows
     // slideShow.value = processSlideShowData(response)
     // play.value = true
