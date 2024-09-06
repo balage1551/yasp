@@ -1,9 +1,9 @@
-import com.github.gradle.node.npm.task.NpmTask
 //import com.github.monosoul.markdown.page.generator.gradle.plugin.GenerateHtmlTask
 //import org.hidetake.groovy.ssh.core.Remote
 //import org.hidetake.groovy.ssh.core.RunHandler
 //import org.hidetake.groovy.ssh.session.SessionHandler
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.github.gradle.node.npm.task.NpmTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("org.springframework.boot") version "3.1.5"
@@ -86,6 +86,11 @@ node {
     nodeProjectDir.set(frontendDir)
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
 
 tasks {
     val npmCheckInstall by registering(NpmTask::class) {
@@ -95,10 +100,6 @@ tasks {
     val npmBuild by registering(NpmTask::class) {
         dependsOn(npmCheckInstall)
         args.addAll("run", "build-prod")
-    }
-
-    withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
     }
 
     withType<Test> {
@@ -113,7 +114,7 @@ tasks {
             from(frontendDistDir)
         }
 
-        archiveFileName.set("hm2.war")
+        archiveFileName.set("yasp.war")
     }
 
     val docMdSourceDir = rootDir.resolve("tools/doc")
