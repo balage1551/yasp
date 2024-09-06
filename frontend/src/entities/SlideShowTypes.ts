@@ -6,9 +6,12 @@ export type OutlineStyle = {
 export type LabelInfo = {
   text: string
   size?: string | undefined
+  align?: 'left' | 'center' | 'right'
   color?: string | undefined
   top?: string | undefined
   left?: string | undefined
+  anchorX?: string | undefined
+  anchorY?: string | undefined
   outlined?: 'default' | OutlineStyle
 }
 

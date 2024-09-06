@@ -74,9 +74,10 @@ export class SlideShow {
       } else if (event.code === 'ArrowLeft' && this.state !== SlideShowState.FINISHED) {
         this.setState(SlideShowState.MANUAL_HOLD)
         this.showPrev()
-      } else if (event.code === 'Tab' && this.state !== SlideShowState.FINISHED) {
+      } else if ((event.code === 'Enter' || event.code === 'Tab') && this.state !== SlideShowState.FINISHED) {
         this.nextBlock()
       }
+      console.log('Key pressed', event.code)
     })
   }
 

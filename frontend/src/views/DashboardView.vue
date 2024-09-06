@@ -11,7 +11,7 @@
               }}
             </v-btn>
           </v-card-title>
-          <v-card-text class="slide-show-info-details" v-if="slideShowList.length > 0">
+          <v-card-text class="slide-show-info-details" v-if="(slideShowList?.length ?? 0) > 0">
             <table>
               <tr v-for="ss in slideShowList" :key="ss.name">
                 <td class="info-label">{{ ss.name }}</td>

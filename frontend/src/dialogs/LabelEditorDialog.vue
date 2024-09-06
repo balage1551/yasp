@@ -9,10 +9,8 @@
       </v-card-title>
       <v-card-text >
         <div class="container">
-          <v-img v-if="slide" :src="image" alt="slideInfo.imageName" class="image"></v-img>
-          <div class="title" v-if="label">
-            <div :style="labelStyle">{{label.text}}</div>
-          </div>
+          <v-img v-if="slide" ref="imageTag" :src="image" alt="slideInfo.imageName" class="image" @load="imageLoaded = true"></v-img>
+          <label-handler v-if="imageLoaded" :image="imageTag" :label="label"></label-handler>
         </div>
         <v-container fluid>
 
@@ -37,25 +35,25 @@
             </v-col>
           </v-row>
           <v-row>
-            <v-col cols="4">
+            <v-col cols="3">
               <v-text-field
-                v-model="label.top"
-                :label="$t('labelEditor.top')"
+                v-model="label.anchorY"
+                :label="$t('labelEditor.anchorY')"
                 variant="outlined"
                 hide-details
                 density="compact"
               ></v-text-field>
             </v-col>
-            <v-col cols="4">
+            <v-col cols="3">
               <v-text-field
-                v-model="label.left"
-                :label="$t('labelEditor.left')"
+                v-model="label.anchorX"
+                :label="$t('labelEditor.anchorX')"
                 variant="outlined"
                 hide-details
                 density="compact"
               ></v-text-field>
             </v-col>
-              <v-col cols="4">
+              <v-col cols="3">
                 <v-text-field
                   v-model="label.color"
                   :label="$t('labelEditor.color')"
@@ -64,16 +62,26 @@
                   density="compact"
                 ></v-text-field>
             </v-col>
+            <v-col cols="3">
+              <v-select
+                v-model="label.align"
+                :label="$t('labelEditor.align')"
+                variant="outlined"
+                hide-details
+                density="compact"
+                :items="['left', 'center', 'right']"
+              ></v-select>
+            </v-col>
           </v-row>
           <v-row>
-            <v-col cols="4">
+            <v-col cols="3">
               <v-checkbox
                 v-model="isOutlined"
                 :label="$t('labelEditor.outlined')"
                 hide-details
                 density="compact"></v-checkbox>
             </v-col>
-            <v-col cols="4">
+            <v-col cols="3">
               <v-text-field v-if="isOutlined && typeof label.outlined === 'object'"
                 v-model="label.outlined!.width"
                 :label="$t('labelEditor.outline.width')"
@@ -82,7 +90,7 @@
                 density="compact"
               ></v-text-field>
             </v-col>
-            <v-col cols="4">
+            <v-col cols="3">
               <v-text-field v-if="isOutlined && typeof label.outlined === 'object'"
                 v-model="label.outlined!.color"
                 :label="$t('labelEditor.outline.color')"
@@ -121,6 +129,7 @@
 import {
   VBtn,
   VCard,
+  VSelect,
   VCardActions,
   VCardText,
   VCardTitle,
@@ -139,6 +148,7 @@ import { computed, ref, watchEffect } from 'vue'
 import useResourceApi from '@/api/resourceApi'
 import { labelStyles } from '@/entities/SlideShowUtils'
 import { useSlideStore } from '@/stores/slideStore'
+import LabelHandler from '@/components/LabelHandler.vue'
 
 // const props = withDefaults(defineProps<{
 // }>(), {
@@ -148,11 +158,9 @@ const isOpen = ref(false)
 
 const slide = ref<Slide | undefined>(undefined)
 const image = ref()
+const imageTag = ref<VImg>()
+const imageLoaded = ref(false)
 const label = ref<LabelInfo>({ text: '', size: '5%' })
-
-const labelStyle = computed(() => {
-  return labelStyles(label.value, useSlideStore().labelDefaults, 50)
-})
 
 const isOutlined = ref(false)
 
@@ -181,11 +189,12 @@ function open(s : Slide) {
     : {
         text: 'szöveg',
         size: '5%',
-        left: '200',
-        top: '100',
-        color: '#000000',
+        anchorX: '50%',
+        anchorY: '10%',
+        align: 'center',
+        color: '#ffffff',
         outlined: {
-          color: '#ffffff',
+          color: '#000000',
           width: 2
         }
       }

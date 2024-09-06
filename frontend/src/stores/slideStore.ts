@@ -10,6 +10,9 @@ export const useSlideStore =
       color: 'black',
       top: '10%',
       left: '10%',
+      align: 'center',
+      anchorX: '50%',
+      anchorY: '5%',
       outlined: {
         color: '#aaaaaa',
         width: 2

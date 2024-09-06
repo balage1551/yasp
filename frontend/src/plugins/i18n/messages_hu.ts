@@ -117,8 +117,9 @@ export const messagesHU = merge({}, messagesCommon, {
     title: 'Felirat szerkesztő',
     text: 'Szöveg',
     size: 'Betűméret',
-    top: 'Függőleges pozíció',
-    left: 'Vízszintes pozíció',
+    anchorY: 'Függőleges pozíció',
+    anchorX: 'Vízszintes pozíció',
+    align: 'Igazítás',
     color: 'Szín',
     outlined: 'Körvonal',
     outline: {
