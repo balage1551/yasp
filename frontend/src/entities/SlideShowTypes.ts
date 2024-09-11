@@ -13,87 +13,75 @@ export type LabelInfo = {
   anchorX?: string | undefined
   anchorY?: string | undefined
   outlined?: 'default' | OutlineStyle
+  override?: boolean
 }
 
-export type CrossFadeTransition = {
-  type: 'crossFade'
-  duration?: number
-}
-
-export type Transition = CrossFadeTransition
+//
+// export type CrossFadeTransition = {
+//   type: 'crossFade'
+//   duration?: number
+// }
+//
+// export type Transition = CrossFadeTransition
 
 export type TimedTrigger = {
   type: 'timed'
-  seconds?: number
+  time?: number
 }
 
 export type KeyTrigger = {
   type: 'key'
-  key?: string,
+  keys?: string[],
   onlyOnce?: boolean
-}
-
-export type DefaultTrigger = {
-  type: 'default'
 }
 
 export type Trigger = TimedTrigger | KeyTrigger
 
-export type SlideTrigger = Trigger | DefaultTrigger
-
-export type AtTheEndContinue = {
-  type: 'continue'
-}
-
-export type AtTheEndHold = {
-  type: 'hold'
-  key?: string
-}
-
-export type AtTheEndLoop = {
-  type: 'loop'
-  startAt?: number | string
-}
-
 export type ImageSlideData = {
+  type?: 'image'
   imageName: string
   label?: LabelInfo
-  trigger?: SlideTrigger
-}
-
-export type Slide = ImageSlideData & {
-  blockIndex?: number
-  inBlockIndex?: number
-  absoluteIndex?: number
-  // eslint-disable-next-line no-use-before-define
-  block: SlideShowBlock
-  thumbnail?: string | undefined
-  missing?: boolean
-}
-
-export type SlideShowBlockBase = {
-  transition?: Transition
   trigger?: Trigger
-  atTheEnd?: AtTheEndContinue | AtTheEndHold | AtTheEndLoop,
-  name?: string
 }
 
-export type SlideShowBlockData = SlideShowBlockBase & {
+export type GroupSlideData = {
+  type: 'group'
+  name?: string
+  trigger?: Trigger
+  slideTrigger?: Trigger
+  label?: LabelInfo
   slides: ImageSlideData[]
 }
 
-export type SlideShowBlock = SlideShowBlockBase & {
-  slides: Slide[]
+export type SlideData = ImageSlideData | GroupSlideData
+
+export type SlideBase = {
   index: number
   uid: number
 }
 
-export type SlideShowData = {
-  blocks: SlideShowBlockData[]
+export type GroupSlide = GroupSlideData & SlideBase & {
+  // eslint-disable-next-line no-use-before-define
+  slides: ImageSlide[]
 }
 
-export type SlideShowInfo = {
-  blocks: SlideShowBlock[]
+export type ImageSlide = ImageSlideData & SlideBase & {
+  group?: GroupSlide
+  thumbnail?: string | undefined
+  missing?: boolean
+}
+
+export type Slide = ImageSlide | GroupSlide
+
+export type SlideShowData = {
+  trigger?: Trigger // Default trigger for individual images
+  groupTrigger?: Trigger // Default trigger for groups exits
+  groupSlideTrigger?: Trigger // Default trigger for group images
+  slides: SlideData[]
+}
+
+export type SlideShow = SlideShowData & {
+  slides: Slide[]
   totalSlides: number
 }
 

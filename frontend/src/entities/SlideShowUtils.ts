@@ -1,4 +1,12 @@
-import { ImageSlideData, LabelInfo, OutlineStyle, Slide, SlideShowBlock, SlideShowBlockData, SlideShowData, SlideShowInfo } from '@/entities/SlideShowTypes'
+import {
+  GroupSlide, GroupSlideData,
+  ImageSlide,
+  ImageSlideData,
+  LabelInfo,
+  OutlineStyle, Slide,
+  SlideShow,
+  SlideShowData,
+} from '@/entities/SlideShowTypes'
 import { toNumber } from 'lodash'
 
 let uidCounter = 0
@@ -7,37 +15,44 @@ export function nextUID() {
   return uidCounter++
 }
 
-export function processSlideShowData(data: SlideShowData) : SlideShowInfo {
-  const info : SlideShowInfo = { blocks: [], totalSlides: 0 }
-  for (let bi = 0; bi < data.blocks.length; bi++) {
-    const blockData = data.blocks[bi]
-    const block: SlideShowBlock = {
-      slides: [],
-      transition: blockData.transition,
-      trigger: blockData.trigger,
-      atTheEnd: blockData.atTheEnd,
-      name: blockData.name,
-      index: bi + 1,
-      uid: nextUID()
-    }
-    info.blocks.push(block)
-
-    for (let sibi = 0; sibi < blockData.slides.length; sibi++) {
-      const slide = blockData.slides[sibi]
-      const slideInfo : Slide = {
-        imageName: slide.imageName,
-        label: slide.label,
-        trigger: slide.trigger,
-        blockIndex: bi + 1,
-        inBlockIndex: sibi + 1,
-        block,
-        absoluteIndex: (++info.totalSlides)
-      }
-      block.slides.push(slideInfo)
+export function processSlideShowData(data: SlideShowData) : SlideShow {
+  function mapImageSlideData(slideData: ImageSlideData, group: GroupSlide | undefined = undefined) : ImageSlide {
+    return {
+      ...slideData,
+      type: 'image',
+      index: 0,
+      uid: nextUID(),
+      group,
+      missing: false
     }
   }
 
-  return info
+  const slideShow : SlideShow = { slides: [], totalSlides: 0 }
+  for (let si = 0; si < data.slides.length; si++) {
+    const slideData = data.slides[si]
+    if (slideData.type === 'group') {
+      const slide : GroupSlide = {
+        uid: nextUID(),
+        index: si,
+        type: 'group',
+        name: slideData.name,
+        trigger: slideData.trigger,
+        slideTrigger: slideData.slideTrigger,
+        label: slideData.label,
+        slides: new Array<ImageSlide>()
+      }
+      for (let i = 0; i < slideData.slides.length; i++) {
+        const slideInfo = slideData.slides[i]
+        const imageSlide = mapImageSlideData(slideInfo, slide)
+        slide.slides.push(imageSlide)
+      }
+      slideShow.slides.push(slide)
+    } else {
+      slideShow.slides.push(mapImageSlideData(slideData))
+    }
+  }
+
+  return slideShow
 }
 
 export function labelStyles(l: LabelInfo | undefined, labelDefaults: LabelInfo, scale: number = 100) : string {
@@ -96,37 +111,58 @@ export function labelStyles(l: LabelInfo | undefined, labelDefaults: LabelInfo, 
   return styles
 }
 
-export function toData(slideShow: SlideShowInfo) : SlideShowData {
-  const data: SlideShowData = {
-    blocks: []
+export function toData(slideShow: SlideShow) : SlideShowData {
+  function mapImageSlide(slide: ImageSlide) : ImageSlideData {
+    const data: ImageSlideData = {
+      type: 'image',
+      imageName: slide.imageName
+    }
+    if (slide.label) {
+      data.label = slide.label
+    }
+    if (slide.trigger) {
+      data.trigger = slide.trigger
+    }
+    return data
   }
-  slideShow.blocks.forEach(block => {
-    const blockData : SlideShowBlockData = {
-      name: block.name ?? '',
-      slides: []
-    }
-    if (block.transition) {
-      blockData.transition = block.transition
-    }
-    if (block.trigger) {
-      blockData.trigger = block.trigger
-    }
-    if (block.atTheEnd) {
-      blockData.atTheEnd = block.atTheEnd
-    }
-    block.slides.forEach(slide => {
-      const slideData : ImageSlideData = {
-        imageName: slide.imageName
+
+  const data: SlideShowData = {
+    slides: []
+  }
+  if (slideShow.trigger) {
+    data.trigger = slideShow.trigger
+  }
+  if (slideShow.groupTrigger) {
+    data.groupTrigger = slideShow.groupTrigger
+  }
+  if (slideShow.groupSlideTrigger) {
+    data.groupSlideTrigger = slideShow.groupSlideTrigger
+  }
+  slideShow.slides.forEach((slide : Slide) => {
+    if (slide.type === 'group') {
+      const groupData : GroupSlideData = {
+        type: 'group',
+        slides: []
       }
-      if (slide.label) {
-        slideData.label = slide.label
+      if (slide.name) {
+        groupData.name = slide.name
       }
       if (slide.trigger) {
-        slideData.trigger = slide.trigger
+        groupData.trigger = slide.trigger
       }
-      blockData.slides.push(slideData)
-    })
-    data.blocks.push(blockData)
+      if (slide.slideTrigger) {
+        groupData.slideTrigger = slide.slideTrigger
+      }
+      if (slide.label) {
+        groupData.label = slide.label
+      }
+      (slide as GroupSlide).slides.forEach((inGroupSlide : ImageSlide) => {
+        groupData.slides.push(mapImageSlide(inGroupSlide))
+      })
+      data.slides.push(groupData)
+    } else {
+      data.slides.push(mapImageSlide(slide))
+    }
   })
   return data
 }

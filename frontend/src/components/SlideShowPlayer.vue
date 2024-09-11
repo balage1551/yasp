@@ -1,28 +1,29 @@
 <template>
   <div class="container" style="position: relative;">
     <cross-fader ref="crossFader"></cross-fader>
-    <v-icon v-if="state === SlideShowState.HOLD_ON_BLOCK_END" class="icon paused-block-end" size="50">mdi-pause</v-icon>
+<!--    <v-icon v-if="state === SlideShowState.HOLD_ON_BLOCK_END" class="icon paused-block-end" size="50">mdi-pause</v-icon>-->
     <v-icon v-if="state === SlideShowState.HOLD_ON_SLIDE" class="icon paused-slide" size="50">mdi-pause</v-icon>
     <v-icon v-if="state === SlideShowState.MANUAL_HOLD" class="icon paused-manual" size="50">mdi-pause</v-icon>
     <v-icon v-if="state === SlideShowState.FINISHED" class="icon finished" size="50">mdi-square</v-icon>
     <v-progress-linear class="progress" height="8px" :max="total" :model-value="progress"></v-progress-linear>
-    <div class="infoBox" v-if="showInfo">
-      {{ currentSlide?.imageName }} ({{ currentSlide?.absoluteIndex }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      Slide {{ currentSlide?.inBlockIndex }} of {{ currentSlide?.block.slides.length }} in block {{ currentSlide?.blockIndex }}
+    <div class="infoBox text-left" v-if="showInfo">
+      {{ currentSlide?.imageName }} ({{ currentSlide?.index }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+      {{ state }} <br/>
+      {{ currentSlide?.group ? 'Group' : ''}}
     </div>
   </div>
 </template>
 <script setup lang="ts">
 
 import { VIcon, VProgressLinear } from 'vuetify/components'
-import { Slide, SlideShowInfo } from '@/entities/SlideShowTypes'
+import { ImageSlide, Slide, SlideShow } from '@/entities/SlideShowTypes'
 import { onMounted, ref } from 'vue'
 import CrossFader from '@/components/CrossFader.vue'
-import { SlideShow, SlideShowState } from '@/entities/SlideShow'
+import { SlideShowRunner, SlideShowState } from '@/entities/SlideShowRunner'
 import { useEventListener } from '@vueuse/core'
 
 const props = withDefaults(defineProps<{
-  slideShow: SlideShowInfo
+  slideShow: SlideShow
 }>(), {})
 
 const emit = defineEmits<{(e: 'finished'): void
@@ -32,18 +33,18 @@ const crossFader = ref<typeof CrossFader>()
 const state = ref<SlideShowState>()
 const total = ref(0)
 const progress = ref(0)
-const currentSlide = ref<Slide | undefined>()
+const currentSlide = ref<ImageSlide | undefined>()
 const showInfo = ref(true)
 
 onMounted(() => {
-  const show = new SlideShow(props.slideShow,
+  const show = new SlideShowRunner(props.slideShow,
     (si) => {
       swap(si)
     },
     (state: SlideShowState) => {
       setOsdIcon(state)
     })
-  total.value = show.info.totalSlides
+  total.value = show.slideShow.totalSlides
   useEventListener(window, 'keydown', (event) => {
     if (event.key === 'i') {
       showInfo.value = !showInfo.value
@@ -52,10 +53,10 @@ onMounted(() => {
   show.start()
 })
 
-function swap(si: Slide | undefined) {
+function swap(si: ImageSlide | undefined) {
   currentSlide.value = si
   crossFader.value?.setNext(si)
-  progress.value = si?.absoluteIndex ?? 0
+  progress.value = si?.index ?? 0
 }
 
 function setOsdIcon(s: SlideShowState) {

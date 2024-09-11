@@ -38,14 +38,14 @@
 import { VBtn, VCard, VCardText, VCardTitle, VContainer } from 'vuetify/components'
 import { onMounted, ref, shallowRef, ShallowRef } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
-import { SlideShowInfo } from '@/entities/SlideShowTypes'
+import { SlideShow } from '@/entities/SlideShowTypes'
 import SlideShowPlayer from '@/components/SlideShowPlayer.vue'
 import useSlideShowApi, { SlideShowListItem } from '@/api/slideShowApi'
 import { processSlideShowData } from '@/entities/SlideShowUtils'
 import { useEditorStore } from '@/stores/editorStore'
 import { useRouter } from 'vue-router'
 
-const slideShow: ShallowRef<undefined | SlideShowInfo> = shallowRef()
+const slideShow: ShallowRef<undefined | SlideShow> = shallowRef()
 const play = ref(false)
 
 const path = ref<string>('')
