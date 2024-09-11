@@ -51,7 +51,7 @@ export class SlideShow {
     this.setState(SlideShowState.PLAYING)
 
     useEventListener(window, 'keydown', (event) => {
-      if (event.code === 'Space') {
+      if (event.code === 'P' || event.code === 'Pause') {
         switch (this.state) {
           case SlideShowState.PLAYING:
             this.setState(SlideShowState.HOLD_ON_SLIDE)
@@ -74,7 +74,7 @@ export class SlideShow {
       } else if (event.code === 'ArrowLeft' && this.state !== SlideShowState.FINISHED) {
         this.setState(SlideShowState.MANUAL_HOLD)
         this.showPrev()
-      } else if ((event.code === 'Enter' || event.code === 'Tab') && this.state !== SlideShowState.FINISHED) {
+      } else if ((event.code === 'Enter' || event.code === 'Space') && this.state !== SlideShowState.FINISHED) {
         this.nextBlock()
       }
       console.log('Key pressed', event.code)
@@ -84,9 +84,12 @@ export class SlideShow {
   show() {
     const block = this.info.blocks[this.currentBlockIndex]
     const slide = block.slides[this.currentSlideIndex]
-    console.log('Showing slide', this.currentBlockIndex, this.currentSlideIndex, slide.imageName)
     this.onSwap(slide)
     let trigger = slide.trigger
+    if (!trigger || trigger.type === 'default') {
+      trigger = block.trigger ?? { type: 'key' }
+    }
+    console.log('Showing slide', this.currentBlockIndex, this.currentSlideIndex, slide.imageName, trigger)
     if (trigger && trigger.type === 'key' && trigger.onlyOnce && this.visitedSlides.has(slide)) {
       trigger = undefined
     }

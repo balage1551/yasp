@@ -33,7 +33,13 @@ export type KeyTrigger = {
   onlyOnce?: boolean
 }
 
+export type DefaultTrigger = {
+  type: 'default'
+}
+
 export type Trigger = TimedTrigger | KeyTrigger
+
+export type SlideTrigger = Trigger | DefaultTrigger
 
 export type AtTheEndContinue = {
   type: 'continue'
@@ -52,7 +58,7 @@ export type AtTheEndLoop = {
 export type ImageSlideData = {
   imageName: string
   label?: LabelInfo
-  trigger?: Trigger
+  trigger?: SlideTrigger
 }
 
 export type Slide = ImageSlideData & {
