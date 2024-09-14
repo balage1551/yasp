@@ -1,12 +1,4 @@
-import {
-  GroupSlide, GroupSlideData,
-  ImageSlide,
-  ImageSlideData,
-  LabelInfo,
-  OutlineStyle, Slide,
-  SlideShow,
-  SlideShowData,
-} from '@/entities/SlideShowTypes'
+import { GroupSlide, GroupSlideData, ImageSlide, ImageSlideData, LabelInfo, OutlineStyle, Slide, SlideShow, SlideShowData, } from '@/entities/SlideShowTypes'
 import { toNumber } from 'lodash'
 
 let uidCounter = 0
@@ -16,11 +8,11 @@ export function nextUID() {
 }
 
 export function processSlideShowData(data: SlideShowData) : SlideShow {
-  function mapImageSlideData(slideData: ImageSlideData, group: GroupSlide | undefined = undefined) : ImageSlide {
+  function mapImageSlideData(slideData: ImageSlideData, index: number, group: GroupSlide | undefined = undefined) : ImageSlide {
     return {
       ...slideData,
       type: 'image',
-      index: 0,
+      index,
       uid: nextUID(),
       group,
       missing: false
@@ -33,7 +25,7 @@ export function processSlideShowData(data: SlideShowData) : SlideShow {
     if (slideData.type === 'group') {
       const slide : GroupSlide = {
         uid: nextUID(),
-        index: si,
+        index: si + 1,
         type: 'group',
         name: slideData.name,
         trigger: slideData.trigger,
@@ -43,12 +35,12 @@ export function processSlideShowData(data: SlideShowData) : SlideShow {
       }
       for (let i = 0; i < slideData.slides.length; i++) {
         const slideInfo = slideData.slides[i]
-        const imageSlide = mapImageSlideData(slideInfo, slide)
+        const imageSlide = mapImageSlideData(slideInfo, i + 1, slide)
         slide.slides.push(imageSlide)
       }
       slideShow.slides.push(slide)
     } else {
-      slideShow.slides.push(mapImageSlideData(slideData))
+      slideShow.slides.push(mapImageSlideData(slideData, si + 1))
     }
   }
 
@@ -165,4 +157,14 @@ export function toData(slideShow: SlideShow) : SlideShowData {
     }
   })
   return data
+}
+
+export function getAllSlides(slideShow: SlideShow) : Slide[] {
+  return slideShow.slides.flatMap(slide => {
+    if (slide.type === 'group') {
+      return (slide as GroupSlide).slides
+    } else {
+      return [slide as ImageSlide]
+    }
+  })
 }

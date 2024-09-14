@@ -2,8 +2,8 @@
   <application-layout>
 
     <v-container fluid class="pa-0 ma-0 ">
-      <v-sheet ref="header" class="header px-2 " variant="elevated" >
-        <v-container fluid class="ma-0" >
+      <v-sheet ref="header" class="header px-2 " variant="elevated">
+        <v-container fluid class="ma-0">
           <v-row>
             <v-col cols="4">
               <v-text-field variant="outlined" v-model="editorStore.path" :label="$t('editor.directory')"
@@ -13,156 +13,340 @@
                 </template>
               </v-text-field>
             </v-col>
-              <v-col cols="4">
+            <v-col cols="4">
               <v-text-field variant="outlined" v-model="editorStore.name" :label="$t('editor.name')"
                             hide-details>
               </v-text-field>
             </v-col>
             <v-col cols="3">
             </v-col>
-            <v-col cols="1" class="text-right" >
-              <v-btn class="mt-2" color="primary" @click="save">{{ $t('common.save' )}}</v-btn>
-            </v-col>
+            <!--            <v-col cols="1" class="text-right" >-->
+            <!--              <v-btn class="mt-2" color="primary" @click="save">{{ $t('common.save' )}}</v-btn>-->
+            <!--            </v-col>-->
           </v-row>
         </v-container>
       </v-sheet>
       <v-toolbar density="compact" class="reel-toolbar px-2" ref="reelToolbar">
         <div class="info ml-2">
-          {{ $t('editor.info', { totalCount: slideShow.totalSlides, blockCount: slideShow.blocks.length }) }}
+          {{ $t('editor.info', {totalCount: slideShow.totalSlides, topSlides: slideShow.slides.length}) }}
         </div>
         <v-spacer></v-spacer>
-          <v-icon size="32" @click="addBlock">mdi-folder-plus</v-icon>
+        <!--          <v-icon size="32" @click="addBlock">mdi-folder-plus</v-icon>-->
       </v-toolbar>
       <v-sheet ref="reel" class="reel" variant="elevated" :style="boxHeight">
-          <v-list v-if="slideShow" class="reel-list" v-model:opened="openedBlocks" ref="dropZone">
-            <v-list-group v-for="block in slideShow.blocks" :key="block.uid"
-                          ref="reelBlocks"
-                          :value="block.uid"
-                          @dragenter="handleBlockDragEnter($event, block)"
-                          @dragleave="handleBlockDragLeave($event, block)"
-                          @drop="drop($event, dragTarget)"
-                          @dragover.prevent>
+
+        <v-list v-if="slideShow" class="reel-list" v-model:opened="openedGroups" ref="dropZone">
+          <template v-for="slide in slideShow.slides" :key="slide.uid">
+
+            <!-- Pre main slide marker -->
+            <div class="drag-marker"
+                 :class="{ 'drag-marker-visible' : isDragTargetSelected( slide ) }"
+                 @dragenter="handleSlideDragEnter($event, slide, true)"
+                 @dragleave="handleSlideDragLeave($event, true)"
+                 @drop="drop($event, dragTarget)"
+                 @dragover.prevent>
+
+            </div>
+
+            <!-- Main slide -->
+            <v-list-item v-if="slide.type === 'image'" class="slide-box"
+                         :class="{ 'selected': reelSelectedItems.includes(slide) }"
+                         style="border-left: 2px solid transparent; "
+                         @dragover.prevent
+                         :draggable="true"
+                         @click="reelSelectItem($event, slide)"
+                         @dragenter="handleSlideDragEnter($event, slide)"
+                         @dragleave="handleSlideDragLeave($event)"
+                         @drop="drop($event, dragTarget)"
+
+                          @dragstart="reelDragStart($event, slide)"
+                          @dragend="dragEnd"
+            >
+
+              <template #prepend>
+                <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
+                       :src="slide.thumbnail" aspect-ratio="1"></v-img>
+                <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>
+              </template>
+              <template #append>
+                <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
+                <!--                                <div style="width: 10px"></div>-->
+                <!--                                <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>-->
+
+              </template>
+              <v-list-item-title class="font-weight-bold mb-2">
+                {{ slide.index }} - {{ slide.imageName }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                <!--                                <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
+                <!--                                <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
+                <!--                                  <template v-slot:activator="{ props }">-->
+                <!--                                    <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
+                <!--                                    <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>-->
+                <!--                                    <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>-->
+                <!--                                  </template>-->
+                <!--                                  <v-list>-->
+                <!--                                    <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">-->
+                <!--                                      <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>-->
+                <!--                                    </v-list-item>-->
+                <!--                                    <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">-->
+                <!--                                      <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>-->
+                <!--                                    </v-list-item>-->
+                <!--                                    <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">-->
+                <!--                                      <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>-->
+                <!--                                    </v-list-item>-->
+                <!--                                  </v-list>-->
+                <!--                                </v-menu>-->
+              </v-list-item-subtitle>
+            </v-list-item>
+
+            <!-- Group slide -->
+            <v-list-group v-else class="group-container" :value="slide.uid">
               <template v-slot:activator="{props}">
-                <v-list-item
-                  v-bind="props"
+                <v-list-item v-bind="props"
+                             :class="{ 'selected-group-head': reelSelectedItems.includes(slide) }"
+                             class="group-head"
+                             @dragover.prevent
+                             @dragenter="handleSlideDragEnter($event, slide)"
+                             @dragleave="handleSlideDragLeave($event)"
+                             @drop="drop($event, dragTarget)"
                 >
-                  <v-container @click.stop="">
+                  <v-container @click.stop="reelSelectItem($event, slide)">
                     <v-row>
                       <v-col cols="6">
-                        <v-text-field v-model="block.name" :label="$t('editor.block.name')" hide-details density="compact"
+                        <v-text-field v-model="slide.name" :label="$t('editor.block.name')" hide-details
+                                      density="compact"
+                                      @click.stop
                                       variant="outlined">
                           <template #prepend>
                             <div class="block-index">
-                              {{ block.index }} - {{ block.uid }}
+                              {{ slide.index }} ({{ slide.slides.length }})
                             </div>
                           </template>
                         </v-text-field>
                       </v-col>
-                      <v-col cols="1">
-                        <v-menu :id="'atTheEndMenu-'+block.uid" location="bottom" @click.stop="">
-                          <template v-slot:activator="{ props }">
-                            <v-icon v-if="block.atTheEnd?.type === 'hold'" size="32" class="mt-1" v-bind="props">
-                              mdi-mouse
-                            </v-icon>
-                            <v-icon v-else-if="block.atTheEnd?.type === 'loop'" class="mt-1" size="32" v-bind="props">
-                              mdi-repeat-variant
-                            </v-icon>
-                            <v-icon v-else size="32" class="mt-1" v-bind="props">mdi-arrow-right-thick</v-icon>
-                          </template>
-                          <v-list>
-                            <v-list-item prepend-icon="mdi-arrow-right-thick" @click="setAtTheEnd(block, 'continue')">
-                              <v-list-item-title>{{ $t('editor.atTheEnd.continue') }}</v-list-item-title>
-                            </v-list-item>
-                            <v-list-item prepend-icon="mdi-mouse" @click="setAtTheEnd(block, 'hold')">
-                              <v-list-item-title>{{ $t('editor.atTheEnd.hold') }}</v-list-item-title>
-                            </v-list-item>
-                            <v-list-item prepend-icon="mdi-repeat-variant" @click="setAtTheEnd(block, 'loop')">
-                              <v-list-item-title>{{ $t('editor.atTheEnd.loop') }}</v-list-item-title>
-                            </v-list-item>
-                          </v-list>
-                        </v-menu>
-                      </v-col>
-                      <v-col cols="5" class="text-right">
-                        <v-icon :disabled="block.index === 1" size="32" @click="mergeUp(block)">mdi-arrow-expand-up
-                        </v-icon>
-                      </v-col>
+
                     </v-row>
                   </v-container>
                 </v-list-item>
               </template>
 
-              <template v-for="slide in block.slides" :key="slide.absoluteIndex">
+              <template v-for="groupSlide in slide.slides" :key="groupSlide.uid">
+
+                <!-- Group slide item pre marker -->
                 <div class="drag-marker"
-                     :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"
-                     @dragenter="handleSlideDragEnter($event, block, slide, true)"
-                     @dragleave="handleSlideDragLeave($event,  true)"
+                     :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( groupSlide, slide) }"
+                     @dragenter="handleSlideDragEnter($event, groupSlide, true)"
+                     @dragleave="handleSlideDragLeave($event, true)"
                      @drop="drop($event, dragTarget)"
                      @dragover.prevent>
-
                 </div>
 
-                <v-list-item class="slide-box" :class="{ 'selected': reelSelectedItems.includes(slide) }"
+                <!-- Group slide item -->
+                <v-list-item v-if="groupSlide.type === 'image'" class="slide-box group-slide"
+                             :class="{ 'selected-group-slide': reelSelectedItems.includes(groupSlide) }"
+                             @dragover.prevent
+                             @click="reelSelectItem($event, groupSlide)"
                              :draggable="true"
-                             @dragstart="reelDragStart($event, slide)"
-                             @dragend="dragEnd"
-                             @dragenter="handleSlideDragEnter($event, block, slide)"
+                             @dragenter="handleSlideDragEnter($event, groupSlide)"
                              @dragleave="handleSlideDragLeave($event)"
                              @drop="drop($event, dragTarget)"
-                             @dragover.prevent
-                             @click="reelSelectItem($event, slide)">
+                >
+                  <!--        @dragstart="reelDragStart($event, slide)"-->
+                  <!--        @dragend="dragEnd"-->
+
                   <template #prepend>
                     <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
-                           :src="slide.thumbnail" aspect-ratio="1"></v-img>
-                    <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>
+                           :src="groupSlide.thumbnail" aspect-ratio="1"></v-img>
+                    <v-icon class="missing" size="60" v-if="groupSlide.missing === true" color="red">mdi-alert</v-icon>
                   </template>
                   <template #append>
-                    <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>
-                    <div style="width: 10px"></div>
-                    <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>
+                    <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
+                    <!--                                <div style="width: 10px"></div>-->
+                    <!--                                <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>-->
 
                   </template>
                   <v-list-item-title class="font-weight-bold mb-2">
-                    {{ slide.inBlockIndex }} - {{ slide.imageName }}
+                    {{ groupSlide.index }} - {{ groupSlide.imageName }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
-                    <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">
-                      <template v-slot:activator="{ props }">
-                        <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>
-                        <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>
-                        <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>
-                      </template>
-                      <v-list>
-                        <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">
-                          <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">
-                          <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">
-                          <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>
-                        </v-list-item>
-                      </v-list>
-                    </v-menu>
+                    <!--                                <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
+                    <!--                                <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
+                    <!--                                  <template v-slot:activator="{ props }">-->
+                    <!--                                    <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
+                    <!--                                    <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>-->
+                    <!--                                    <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>-->
+                    <!--                                  </template>-->
+                    <!--                                  <v-list>-->
+                    <!--                                    <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">-->
+                    <!--                                      <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>-->
+                    <!--                                    </v-list-item>-->
+                    <!--                                    <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">-->
+                    <!--                                      <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>-->
+                    <!--                                    </v-list-item>-->
+                    <!--                                    <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">-->
+                    <!--                                      <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>-->
+                    <!--                                    </v-list-item>-->
+                    <!--                                  </v-list>-->
+                    <!--                                </v-menu>-->
                   </v-list-item-subtitle>
                 </v-list-item>
               </template>
-              <div class="drag-marker" :class="{ 'drag-marker-visible' : isDragTargetSelected( block, undefined) }"
-                   @dragenter="handleSlideDragEnter($event, block, undefined, true)"
+
+              <!-- Group slide item post marker -->
+              <div class="drag-marker"
+                   :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( undefined, slide) }"
+                   @dragenter="handleSlideDragEnter($event, undefined, true)"
                    @dragleave="handleSlideDragLeave($event, true)"
                    @drop="drop($event, dragTarget)"
                    @dragover.prevent>
               </div>
 
             </v-list-group>
-          </v-list>
+          </template>
+
+          <div class="drag-marker"
+               :class="{ 'drag-marker-visible' : isDragTargetSelected( undefined) }"
+               @dragenter="handleSlideDragEnter($event, undefined, true)"
+               @dragleave="handleSlideDragLeave($event,  true)"
+               @drop="drop($event, dragTarget)"
+               @dragover.prevent>
+
+          </div>
+          <!--            :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"-->
+          <!--            @dragenter="handleSlideDragEnter($event, block, slide, true)"-->
+          <!--            @dragleave="handleSlideDragLeave($event,  true)"-->
+          <!--            @drop="drop($event, dragTarget)"-->
+
+          <!--            <v-list-group v-for="block in slideShow.blocks" :key="block.uid"-->
+          <!--                          ref="reelBlocks"-->
+          <!--                          :value="block.uid"-->
+          <!--                          @dragenter="handleBlockDragEnter($event, block)"-->
+          <!--                          @dragleave="handleBlockDragLeave($event, block)"-->
+          <!--                          @drop="drop($event, dragTarget)"-->
+          <!--                          @dragover.prevent>-->
+          <!--              <template v-slot:activator="{props}">-->
+          <!--                <v-list-item-->
+          <!--                  v-bind="props"-->
+          <!--                >-->
+          <!--                  <v-container @click.stop="">-->
+          <!--                    <v-row>-->
+          <!--                      <v-col cols="6">-->
+          <!--                        <v-text-field v-model="block.name" :label="$t('editor.block.name')" hide-details density="compact"-->
+          <!--                                      variant="outlined">-->
+          <!--                          <template #prepend>-->
+          <!--                            <div class="block-index">-->
+          <!--                              {{ block.index }} - {{ block.uid }}-->
+          <!--                            </div>-->
+          <!--                          </template>-->
+          <!--                        </v-text-field>-->
+          <!--                      </v-col>-->
+          <!--                      <v-col cols="1">-->
+          <!--                        <v-menu :id="'atTheEndMenu-'+block.uid" location="bottom" @click.stop="">-->
+          <!--                          <template v-slot:activator="{ props }">-->
+          <!--                            <v-icon v-if="block.atTheEnd?.type === 'hold'" size="32" class="mt-1" v-bind="props">-->
+          <!--                              mdi-mouse-->
+          <!--                            </v-icon>-->
+          <!--                            <v-icon v-else-if="block.atTheEnd?.type === 'loop'" class="mt-1" size="32" v-bind="props">-->
+          <!--                              mdi-repeat-variant-->
+          <!--                            </v-icon>-->
+          <!--                            <v-icon v-else size="32" class="mt-1" v-bind="props">mdi-arrow-right-thick</v-icon>-->
+          <!--                          </template>-->
+          <!--                          <v-list>-->
+          <!--                            <v-list-item prepend-icon="mdi-arrow-right-thick" @click="setAtTheEnd(block, 'continue')">-->
+          <!--                              <v-list-item-title>{{ $t('editor.atTheEnd.continue') }}</v-list-item-title>-->
+          <!--                            </v-list-item>-->
+          <!--                            <v-list-item prepend-icon="mdi-mouse" @click="setAtTheEnd(block, 'hold')">-->
+          <!--                              <v-list-item-title>{{ $t('editor.atTheEnd.hold') }}</v-list-item-title>-->
+          <!--                            </v-list-item>-->
+          <!--                            <v-list-item prepend-icon="mdi-repeat-variant" @click="setAtTheEnd(block, 'loop')">-->
+          <!--                              <v-list-item-title>{{ $t('editor.atTheEnd.loop') }}</v-list-item-title>-->
+          <!--                            </v-list-item>-->
+          <!--                          </v-list>-->
+          <!--                        </v-menu>-->
+          <!--                      </v-col>-->
+          <!--                      <v-col cols="5" class="text-right">-->
+          <!--                        <v-icon :disabled="block.index === 1" size="32" @click="mergeUp(block)">mdi-arrow-expand-up-->
+          <!--                        </v-icon>-->
+          <!--                      </v-col>-->
+          <!--                    </v-row>-->
+          <!--                  </v-container>-->
+          <!--                </v-list-item>-->
+          <!--              </template>-->
+
+          <!--              <template v-for="slide in block.slides" :key="slide.absoluteIndex">-->
+          <!--                <div class="drag-marker"-->
+          <!--                     :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"-->
+          <!--                     @dragenter="handleSlideDragEnter($event, block, slide, true)"-->
+          <!--                     @dragleave="handleSlideDragLeave($event,  true)"-->
+          <!--                     @drop="drop($event, dragTarget)"-->
+          <!--                     @dragover.prevent>-->
+
+          <!--                </div>-->
+
+          <!--                <v-list-item class="slide-box" :class="{ 'selected': reelSelectedItems.includes(slide) }"-->
+          <!--                             :draggable="true"-->
+          <!--                             @dragstart="reelDragStart($event, slide)"-->
+          <!--                             @dragend="dragEnd"-->
+          <!--                             @dragenter="handleSlideDragEnter($event, block, slide)"-->
+          <!--                             @dragleave="handleSlideDragLeave($event)"-->
+          <!--                             @drop="drop($event, dragTarget)"-->
+          <!--                             @dragover.prevent-->
+          <!--                             @click="reelSelectItem($event, slide)">-->
+          <!--                  <template #prepend>-->
+          <!--                    <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"-->
+          <!--                           :src="slide.thumbnail" aspect-ratio="1"></v-img>-->
+          <!--                    <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>-->
+          <!--                  </template>-->
+          <!--                  <template #append>-->
+          <!--                    <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
+          <!--                    <div style="width: 10px"></div>-->
+          <!--                    <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>-->
+
+          <!--                  </template>-->
+          <!--                  <v-list-item-title class="font-weight-bold mb-2">-->
+          <!--                    {{ slide.inBlockIndex }} - {{ slide.imageName }}-->
+          <!--                  </v-list-item-title>-->
+          <!--                  <v-list-item-subtitle>-->
+          <!--                    <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
+          <!--                    <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
+          <!--                      <template v-slot:activator="{ props }">-->
+          <!--                        <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
+          <!--                        <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>-->
+          <!--                        <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>-->
+          <!--                      </template>-->
+          <!--                      <v-list>-->
+          <!--                        <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">-->
+          <!--                          <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>-->
+          <!--                        </v-list-item>-->
+          <!--                        <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">-->
+          <!--                          <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>-->
+          <!--                        </v-list-item>-->
+          <!--                        <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">-->
+          <!--                          <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>-->
+          <!--                        </v-list-item>-->
+          <!--                      </v-list>-->
+          <!--                    </v-menu>-->
+          <!--                  </v-list-item-subtitle>-->
+          <!--                </v-list-item>-->
+          <!--              </template>-->
+          <!--              <div class="drag-marker" :class="{ 'drag-marker-visible' : isDragTargetSelected( block, undefined) }"-->
+          <!--                   @dragenter="handleSlideDragEnter($event, block, undefined, true)"-->
+          <!--                   @dragleave="handleSlideDragLeave($event, true)"-->
+          <!--                   @drop="drop($event, dragTarget)"-->
+          <!--                   @dragover.prevent>-->
+          <!--              </div>-->
+
+          <!--            </v-list-group>-->
+        </v-list>
         <div class="ma-2" style="display: none;">
-          DT: {{ dragType }} - BC: {{ blockDragCounter }} - SC: {{ slideDragCounter }} - TT: {{ dragTarget?.type }} - TBI:
-          {{ dragTarget?.block.index }} -
-          TIBI: {{ dragTarget?.nextSlide?.inBlockIndex }}
+          <!--          DT: {{ dragType }} - BC: {{ blockDragCounter }} - SC: {{ slideDragCounter }} - TT: {{ dragTarget?.type }} - TBI:-->
+          <!--          {{ dragTarget?.block.index }} - -->
         </div>
       </v-sheet>
-      <v-toolbar density="compact" class="basket-toolbar px-2" ref="basketToolbar" :style="'top:'+headerSize.height.value+'px' ">
+
+      <v-toolbar density="compact" class="basket-toolbar px-2" ref="basketToolbar"
+                 :style="'top:'+headerSize.height.value+'px' ">
         <v-icon size="32" @click="selectAllInBasket" class="mr-2">mdi-checkbox-multiple-marked-outline</v-icon>
         <v-icon size="32" @click="selectNoneInBasket" class="mr-2">mdi-checkbox-multiple-blank-outline</v-icon>
         <v-spacer></v-spacer>
@@ -176,6 +360,12 @@
                        :draggable="true"
                        @dragstart="basketDragStart($event, image)"
                        @dragend="dragEnd">
+            <!--                        <v-list-item v-for="image in unusedItemsInBasket" :key="image.imageName"-->
+            <!--                         class="my-1 slide-box" :class="{ 'selected': basketSelectedItems.includes(image) }"-->
+            <!--                         @click="basketSelectItem($event, image)"-->
+            <!--                         :draggable="true"-->
+            <!--                         @dragstart="basketDragStart($event, image)"-->
+            <!--                         @dragend="dragEnd">-->
             <template #prepend>
               <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
                      :src="image.thumbnail" aspect-ratio="1"></v-img>
@@ -198,7 +388,7 @@
     <v-img v-if="basketSelectedItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
     <img :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail" style="left:5px; top:5px;">
   </div>
-  <label-editor-dialog ref="labelEditor"></label-editor-dialog>
+  <!--  <label-editor-dialog ref="labelEditor"></label-editor-dialog>-->
 </template>
 <script setup lang="ts">
 
@@ -213,31 +403,28 @@ import {
   VListItem,
   VListItemSubtitle,
   VListItemTitle,
-  VMenu,
   VRow,
   VSheet,
   VSpacer,
   VTextField,
   VToolbar
 } from 'vuetify/components'
-import { computed, nextTick, onMounted, Ref, ref, toRaw, watchEffect } from 'vue'
+import { computed, onMounted, Ref, ref, toRaw } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
-import { BasketItem, Slide, SlideShowBlock, SlideShowInfo } from '@/entities/SlideShowTypes'
+import { BasketItem, GroupSlide, ImageSlide, Slide, SlideShow } from '@/entities/SlideShowTypes'
 import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
-import { nextUID, toData } from '@/entities/SlideShowUtils'
-import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
-import useSlideShowApi from '@/api/slideShowApi'
-import LabelEditorDialog from '@/dialogs/LabelEditorDialog.vue'
+import { getAllSlides, nextUID } from '@/entities/SlideShowUtils'
+import { useConfirmDialog } from '@/modules/dialog/confirmDialog'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
 const editorStore = useEditorStore()
 const createConfirmDialog = useConfirmDialog()!
 
-const slideShow: Ref<SlideShowInfo> = ref({ blocks: [], totalSlides: 0 })
+const slideShow: Ref<SlideShow> = ref({ slides: [], totalSlides: 0 })
 const header = ref()
 const reelToolbar = ref()
 
@@ -249,26 +436,32 @@ const boxHeight = computed(() => {
   return 'height:' + (windowSize.height.value - headerSize.height.value - reelToolbarSize.height.value) + 'px'
 })
 
-const openedBlocks = ref<number[]>([])
+const openedGroups = ref<number[]>([])
 
 onMounted(async () => {
   console.log('editorStore', editorStore.slideShow)
   if (editorStore.slideShow == null) {
-    await editorStore.setCurrentSlideShow('gallery/test', 'test')
+    await editorStore.setCurrentSlideShow('gallery/iceland', 'marci')
   }
   slideShow.value = editorStore.slideShow!
   console.log('slideShow', slideShow.value)
   if (slideShow.value) {
-    openedBlocks.value.slice(0, openedBlocks.value.length)
-    slideShow.value.blocks.forEach((block) => {
-      openedBlocks.value.push(block.uid)
-      block.slides.forEach((slide) => {
-        if (slide.thumbnail === undefined) {
-          resourceApi.requestThumbnail(slide.imageName).then((response) => {
-            slide.thumbnail = URL.createObjectURL(response)
-          })
-        }
-      })
+    openedGroups.value.slice(0, openedGroups.value.length)
+    slideShow.value.slides.forEach((slide) => {
+      if (slide.type === 'group') {
+        openedGroups.value.push(slide.uid)
+        slide.slides.forEach((slide) => {
+          if (slide.thumbnail === undefined) {
+            resourceApi.requestThumbnail(slide.imageName).then((response) => {
+              slide.thumbnail = URL.createObjectURL(response)
+            })
+          }
+        })
+      } else {
+        resourceApi.requestThumbnail(slide.imageName).then((response) => {
+          slide.thumbnail = URL.createObjectURL(response)
+        })
+      }
     })
   }
   scan()
@@ -280,7 +473,7 @@ function scan() {
     console.log('scan response', response)
     if (response.successful) {
       const slideImageNames = new Map<string, Slide>()
-      slideShow.value.blocks.flatMap((block) => block.slides).forEach((slide) => slideImageNames.set(slide.imageName, slide))
+      getAllSlides(slideShow.value).forEach((slide) => slideImageNames.set(slide.imageName, slide))
       basketList.value = []
       response.images?.forEach((file) => {
         const usedInSlideShow = slideImageNames.has(file.fileName)
@@ -307,96 +500,97 @@ function scan() {
   })
 }
 
-function setAtTheEnd(block: SlideShowBlock, type: 'continue' | 'hold' | 'loop') {
-  block.atTheEnd = { type }
-}
-
-function indexOfBlock(block: SlideShowBlock) {
-  return slideShow.value.blocks.indexOf(block)
-}
-
-function mergeUp(block: SlideShowBlock) {
-  const ss = slideShow.value
-  const i = indexOfBlock(block)
-  const prevBlock = ss.blocks[i - 1]
-  block.slides.forEach((s) => {
-    prevBlock.slides.push(s)
-    s.block = prevBlock
-    s.blockIndex = prevBlock.index
-    s.inBlockIndex = prevBlock.slides.length
-  })
-  ss.blocks.splice(i, 1)
-  for (let p = i; p < ss.blocks.length; p++) {
-    ss.blocks[p].index = p + 1
-  }
-  const obidx = openedBlocks.value.indexOf(block.uid)
-  if (obidx !== -1) {
-    openedBlocks.value.splice(obidx, 1)
-  }
-}
-
-const reelBlocks = ref()
-
-function splitBlock(block: SlideShowBlock, slide: Slide) {
-  const ss = slideShow.value
-  const i = indexOfBlock(block)
-  const newBlock: SlideShowBlock = { slides: [], index: i + 1, uid: nextUID() }
-  ss.blocks.splice(i + 1, 0, newBlock)
-  let ibi = 1
-  const startIndex = slide.inBlockIndex! - 1
-  for (let p = startIndex; p < block.slides.length; p++) {
-    const s = block.slides[p]
-    s.inBlockIndex = ibi++
-    s.block = newBlock
-    s.blockIndex = newBlock.index
-    newBlock.slides.push(s)
-  }
-  block.slides.splice(startIndex, block.slides.length)
-  for (let p = i; p < ss.blocks.length; p++) {
-    ss.blocks[p].index = p + 1
-  }
-
-  nextTick(() => {
-    openedBlocks.value.push(newBlock.uid)
-  })
-}
-
-watchEffect(() => {
-  console.log('OB', [...openedBlocks.value])
-})
-
+//
+// function setAtTheEnd(block: SlideShowBlock, type: 'continue' | 'hold' | 'loop') {
+//   block.atTheEnd = { type }
+// }
+//
+// function indexOfBlock(block: SlideShowBlock) {
+//   return slideShow.value.slides.indexOf(block)
+// }
+//
+// function mergeUp(block: SlideShowBlock) {
+//   const ss = slideShow.value
+//   const i = indexOfBlock(block)
+//   const prevBlock = ss.slides[i - 1]
+//   block.slides.forEach((s) => {
+//     prevBlock.slides.push(s)
+//     s.block = prevBlock
+//     s.blockIndex = prevBlock.index
+//     s.inBlockIndex = prevBlock.slides.length
+//   })
+//   ss.slides.splice(i, 1)
+//   for (let p = i; p < ss.slides.length; p++) {
+//     ss.slides[p].index = p + 1
+//   }
+//   const obidx = openedGroups.value.indexOf(block.uid)
+//   if (obidx !== -1) {
+//     openedGroups.value.splice(obidx, 1)
+//   }
+// }
+//
+// const reelBlocks = ref()
+//
+// function splitBlock(block: SlideShowBlock, slide: Slide) {
+//   const ss = slideShow.value
+//   const i = indexOfBlock(block)
+//   const newBlock: SlideShowBlock = { slides: [], index: i + 1, uid: nextUID() }
+//   ss.slides.splice(i + 1, 0, newBlock)
+//   let ibi = 1
+//   const startIndex = slide.inBlockIndex! - 1
+//   for (let p = startIndex; p < block.slides.length; p++) {
+//     const s = block.slides[p]
+//     s.inBlockIndex = ibi++
+//     s.block = newBlock
+//     s.blockIndex = newBlock.index
+//     newBlock.slides.push(s)
+//   }
+//   block.slides.splice(startIndex, block.slides.length)
+//   for (let p = i; p < ss.slides.length; p++) {
+//     ss.slides[p].index = p + 1
+//   }
+//
+//   nextTick(() => {
+//     openedGroups.value.push(newBlock.uid)
+//   })
+// }
+//
+// watchEffect(() => {
+//   console.log('OB', [...openedGroups.value])
+// })
+//
 const basketList = ref<BasketItem[]>([])
 const unusedItemsInBasket = computed(() => basketList.value.filter((item) => item.usedInSlideShow === false))
-
-function deleteSlide(slide: Slide) {
-  reelRemoveItems([slide])
-}
-
-function addBlock() {
-  const ss = slideShow.value
-  const newBlock: SlideShowBlock = { slides: [], index: ss.blocks.length + 1, uid: nextUID() }
-  ss.blocks.push(newBlock)
-  openedBlocks.value.push(newBlock.uid)
-}
-
-function setTransition(slide: Slide, type: 'continue' | 'hold' | 'holdOnce') {
-  if (type === 'continue') {
-    delete slide.trigger
-  } else if (type === 'hold') {
-    slide.trigger = { type: 'key' }
-  } else if (type === 'holdOnce') {
-    slide.trigger = { type: 'key', onlyOnce: true }
-  }
-}
+//
+// function deleteSlide(slide: Slide) {
+//   reelRemoveItems([slide])
+// }
+//
+// function addBlock() {
+//   const ss = slideShow.value
+//   const newBlock: SlideShowBlock = { slides: [], index: ss.slides.length + 1, uid: nextUID() }
+//   ss.slides.push(newBlock)
+//   openedGroups.value.push(newBlock.uid)
+// }
+//
+// function setTransition(slide: Slide, type: 'continue' | 'hold' | 'holdOnce') {
+//   if (type === 'continue') {
+//     delete slide.trigger
+//   } else if (type === 'hold') {
+//     slide.trigger = { type: 'key' }
+//   } else if (type === 'holdOnce') {
+//     slide.trigger = { type: 'key', onlyOnce: true }
+//   }
+// }
 
 // =====================================================================================================================
 // Drag and drop base
 // =====================================================================================================================
 
 type DragTargetInfo = {
-  block: SlideShowBlock
   nextSlide: Slide | undefined
-  type: 'block' | 'slide' | 'marker'
+  group: Slide | undefined
+  type: 'slide' | 'marker'
 }
 
 enum DragType {
@@ -425,7 +619,7 @@ function handleBlockDragEnter(event: DragEvent, block: SlideShowBlock) {
   console.log('Drag enter on block', block.index, blockDragCounter.value)
   const newTarget: DragTargetInfo = {
     block,
-    nextSlide: (openedBlocks.value.includes(block.uid)) ? (block.slides.length === 0 ? undefined : block.slides[0]) : undefined,
+    nextSlide: (openedGroups.value.includes(block.uid)) ? (block.slides.length === 0 ? undefined : block.slides[0]) : undefined,
     type: 'block'
   }
   if (newTarget.block === dragTarget.value?.block && newTarget.nextSlide === dragTarget.value?.nextSlide) {
@@ -449,39 +643,50 @@ function handleBlockDragLeave(event: DragEvent, block: SlideShowBlock) {
   event.preventDefault()
 }
 
-function handleSlideDragEnter(event: DragEvent, block: SlideShowBlock, slide: Slide | undefined, isMarker: boolean = false) {
+function handleSlideDragEnter(event: DragEvent, slide: Slide | undefined, isMarker: boolean = false) {
   // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
   slideDragCounter.value++
-  console.log('Drag enter on slide', isMarker, block?.index, slide?.inBlockIndex, slideDragCounter.value)
   event.stopPropagation()
   event.preventDefault()
-  let newTarget: DragTargetInfo
   const isUp = event.offsetY < 40
+  const inGroup = slide?.type === 'image' && slide?.group !== undefined
+  let group = inGroup ? slide!.group! : undefined
+  console.log(`Drag enter on slide marker=${isMarker} offset=${event.offsetY} isUp=${isUp} inGroup=${inGroup} counter=${slideDragCounter.value}`, slide)
+  let newTarget: DragTargetInfo
   if (isUp) {
     newTarget = {
-      block,
       nextSlide: slide,
+      group,
       type: isMarker ? 'marker' : 'slide'
     }
   } else {
-    const nextIndex = (slide === undefined || slide.inBlockIndex! === block.slides.length) ? undefined : slide.inBlockIndex!
-    const nextSlide = nextIndex === undefined ? undefined : block.slides[nextIndex]
+    let nextSlide: Slide | undefined
+    if (inGroup) {
+      const nextIndex = (slide === undefined || slide.index! === slide.group!.slides.length) ? undefined : slide.index!
+      nextSlide = nextIndex === undefined ? undefined : slide.group!.slides[nextIndex]
+    } else {
+      if (slide?.type === 'group') {
+        nextSlide = slide.slides[0]
+        group = slide
+      } else {
+        const nextIndex = (slide === undefined || slide.index! === slideShow.value.slides.length) ? undefined : slide.index!
+        nextSlide = nextIndex === undefined ? undefined : slideShow.value.slides[nextIndex]
+      }
+    }
     newTarget = {
-      block,
       nextSlide,
+      group,
       type: isMarker ? 'marker' : 'slide'
     }
   }
-  if (newTarget.type === dragTarget.value?.type && newTarget.block === dragTarget.value?.block && newTarget.nextSlide === dragTarget.value?.nextSlide) {
+  if (newTarget.type === dragTarget.value?.type && newTarget.group === dragTarget.value?.group && newTarget.nextSlide === dragTarget.value?.nextSlide) {
     return
   }
-  console.log('Drag target', newTarget.block.index, newTarget.nextSlide?.inBlockIndex)
+  console.log('Drag target', newTarget.nextSlide?.index, newTarget.inGroup)
   dragTarget.value = newTarget
-  // }
 }
 
 function handleSlideDragLeave(event: DragEvent, isMarker: boolean = false) {
-  // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
   slideDragCounter.value--
   if (slideDragCounter.value <= 0) {
     if (dragTarget.value?.type === (isMarker ? 'marker' : 'slide')) {
@@ -528,13 +733,13 @@ function dragEnd(event: DragEvent) {
   dragType.value = undefined
 }
 
-function isDragTargetSelected(block: SlideShowBlock, slide: Slide | undefined) {
+function isDragTargetSelected(slide: Slide | undefined, group: GroupSlide | undefined) {
   if (!dragTarget.value) return false
-  return block === dragTarget.value.block && slide === dragTarget.value.nextSlide
+  return slide === dragTarget.value.nextSlide && group === dragTarget.value.group
 }
 
 function findSlideByIndex(index: number) {
-  return slideShow.value.blocks.flatMap((block) => block.slides).find((slide) => slide.absoluteIndex === index)
+  return slideShow.value.slides.flatMap((block) => block.slides).find((slide) => slide.absoluteIndex === index)
 }
 
 // =====================================================================================================================
@@ -586,32 +791,40 @@ function basketDragStart(event: DragEvent, image: BasketItem) {
     if (event.ctrlKey) basketSelectItem(event, image)
     else basketSelectedItems.value = [image]
   }
+  console.log('Drag start', basketSelectedItems.value.map((s) => s.thumbnail))
   dragHolderThumbnail.value = basketSelectedItems.value[0]?.thumbnail
   initializeDragHolder(event)
   dragType.value = DragType.BASKET_TO_REEL
 }
 
 function dropBasketToReel(target: DragTargetInfo) {
-  const block = target.block
-  const itemsToAdd: Slide[] = []
   reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
+  const group = target.group
+  const targetContainer = group ?? slideShow.value
+  const itemsToAdd: Slide[] = []
+  let index = target.nextSlide ? target.nextSlide.index! : targetContainer.slides.length + 1
+  const insertIndex = index - 1
+  console.warn('Drop basket to reel', targetContainer, insertIndex)
   basketSelectedItems.value.forEach((item) => {
-    const slide = {
+    const slide: ImageSlide = {
+      uid: nextUID(),
+      type: 'image',
       imageName: item.imageName,
       thumbnail: item.thumbnail,
-      block,
-      blockIndex: block.index,
-      inBlockIndex: block.slides.length + 1
+      index: index++
+    }
+    if (group) {
+      slide.group = group
     }
     itemsToAdd.push(slide)
     item.usedInSlideShow = true
     reelSelectedItems.value.push(slide)
   })
-  const insertBefore = target.nextSlide ? target.nextSlide.inBlockIndex! - 1 : block.slides.length
-  block.slides.splice(insertBefore, 0, ...itemsToAdd)
-  for (let i = insertBefore; i < block.slides.length; i++) {
-    block.slides[i].inBlockIndex = i + 1
+  targetContainer.slides.splice(insertIndex, 0, ...itemsToAdd)
+  for (let i = index - 1; i < targetContainer.slides.length; i++) {
+    targetContainer.slides[i].index = i + 1
   }
+  console.log('Updated', slideShow.value)
   basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
 }
 
@@ -620,21 +833,29 @@ function dropBasketToReel(target: DragTargetInfo) {
 // =====================================================================================================================
 
 const reelSelectedItems = ref<Slide[]>([])
-let reelLastSelectedItemIndex: number = -1
+let reelLastSelectedItem: Slide | undefined
+// let reelLastSelectedItemIndex: number = -1
 
 function reelSelectItem(event: MouseEvent | KeyboardEvent, slide: Slide) {
-  const itemIndex = slide.absoluteIndex!
+  const itemIndex = slide.index!
+  console.log('Select item', itemIndex, slide)
 
   const index = reelSelectedItems.value.indexOf(slide)
-  if (event.shiftKey && reelLastSelectedItemIndex !== -1) {
+  const reelLastSelectedItemIndex = reelLastSelectedItem?.index
+  if (event.shiftKey && reelLastSelectedItemIndex !== undefined) {
     // Shift+Click: Select range
-    const start = Math.min(reelLastSelectedItemIndex, itemIndex)
-    const end = Math.max(reelLastSelectedItemIndex, itemIndex)
-    if (!event.ctrlKey) {
-      reelSelectedItems.value = []
-    }
-    for (let i = start; i <= end; i++) {
-      reelSelectedItems.value.push(findSlideByIndex(i)!)
+    if (reelLastSelectedItem.group === slide.group) {
+      const targetGroup = slide.group ?? slideShow.value
+      const start = Math.min(reelLastSelectedItemIndex, itemIndex)
+      const end = Math.max(reelLastSelectedItemIndex, itemIndex)
+      if (!event.ctrlKey) {
+        reelSelectedItems.value = []
+      }
+      for (let i = start; i <= end; i++) {
+        reelSelectedItems.value.push(targetGroup.slides[i - 1]!)
+      }
+    } else {
+      return
     }
   } else if (event.ctrlKey) {
     // Ctrl+Click: Toggle selection
@@ -648,91 +869,92 @@ function reelSelectItem(event: MouseEvent | KeyboardEvent, slide: Slide) {
     reelSelectedItems.value = [slide]
   }
 
-  reelLastSelectedItemIndex = itemIndex
+  reelLastSelectedItem = slide
 
-  console.log('Selected items', reelSelectedItems.value.map((s) => s.absoluteIndex))
+  console.log('Selected items', reelSelectedItems.value.map((s) => (s.group ? s.group.index + '.' : '') + s.index))
 }
 
-function reelDragStart(event: DragEvent, slide: Slide) {
-  console.log('Drag start', slide.absoluteIndex)
-  if (!reelSelectedItems.value.includes(slide)) {
-    if (event.ctrlKey) reelSelectItem(event, slide)
-    else reelSelectedItems.value = [slide]
-  }
-  dragHolderThumbnail.value = reelSelectedItems.value[0]?.thumbnail
-  initializeDragHolder(event)
-  dragType.value = DragType.REEL_REORDER
-}
+//
+// function reelDragStart(event: DragEvent, slide: Slide) {
+//   console.log('Drag start', slide.absoluteIndex)
+//   if (!reelSelectedItems.value.includes(slide)) {
+//     if (event.ctrlKey) reelSelectItem(event, slide)
+//     else reelSelectedItems.value = [slide]
+//   }
+//   dragHolderThumbnail.value = reelSelectedItems.value[0]?.thumbnail
+//   initializeDragHolder(event)
+//   dragType.value = DragType.REEL_REORDER
+// }
+//
+// function dropReelReorder(target: DragTargetInfo) {
+//   console.log('Drop reel reorder', target)
+//   reelSelectedItems.value.forEach((slide) => {
+//     const block = slide.block
+//     const index = block.slides.indexOf(slide)
+//     if (index !== -1) {
+//       block.slides.splice(index, 1)
+//     }
+//   })
+//   const block = target.block
+//   const insertBefore = target.nextSlide ? target.nextSlide.inBlockIndex! - 1 : block.slides.length
+//   block.slides.splice(insertBefore, 0, ...reelSelectedItems.value)
+//   updateSlideInfo()
+// }
+//
+// function reelRemoveItems(items: Slide[]) {
+//   createConfirmDialog({
+//     title: '@editor.deleteSlide.title',
+//     titleColor: 'red',
+//     content: '@editor.deleteSlide.message',
+//     buttons: ButtonSet.yesNo
+//   }).then((button) => {
+//     if (button === Button.YES) {
+//       console.log('Reel remove items', items)
+//       items.forEach((slide) => {
+//         const block = slide.block
+//         const index = block.slides.indexOf(slide)
+//         if (index !== -1) {
+//           block.slides.splice(index, 1)
+//         }
+//       })
+//       basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
+//       basketList.value
+//         .filter((basketItem) => reelSelectedItems.value.some((item) => item.imageName === basketItem.imageName))
+//         .forEach((item) => {
+//           item.usedInSlideShow = false
+//           basketSelectedItems.value.push(item)
+//         })
+//       updateSlideInfo()
+//     }
+//     reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
+//   })
+// }
+//
+// function updateSlideInfo() {
+//   let absoluteIndex = 1
+//   slideShow.value.slides.forEach((block) => {
+//     block.slides.forEach((slide, index) => {
+//       slide.block = block
+//       slide.inBlockIndex = index + 1
+//       slide.blockIndex = block.index
+//       slide.absoluteIndex = absoluteIndex++
+//     })
+//   })
+// }
+//
+// function save() {
+//   const data = toData(slideShow.value)
+//   useSlideShowApi().saveSlideShow(editorStore.path, editorStore.name, data).then((response) => {
+//     console.log('Save response', response)
+//   })
+// }
 
-function dropReelReorder(target: DragTargetInfo) {
-  console.log('Drop reel reorder', target)
-  reelSelectedItems.value.forEach((slide) => {
-    const block = slide.block
-    const index = block.slides.indexOf(slide)
-    if (index !== -1) {
-      block.slides.splice(index, 1)
-    }
-  })
-  const block = target.block
-  const insertBefore = target.nextSlide ? target.nextSlide.inBlockIndex! - 1 : block.slides.length
-  block.slides.splice(insertBefore, 0, ...reelSelectedItems.value)
-  updateSlideInfo()
-}
-
-function reelRemoveItems(items: Slide[]) {
-  createConfirmDialog({
-    title: '@editor.deleteSlide.title',
-    titleColor: 'red',
-    content: '@editor.deleteSlide.message',
-    buttons: ButtonSet.yesNo
-  }).then((button) => {
-    if (button === Button.YES) {
-      console.log('Reel remove items', items)
-      items.forEach((slide) => {
-        const block = slide.block
-        const index = block.slides.indexOf(slide)
-        if (index !== -1) {
-          block.slides.splice(index, 1)
-        }
-      })
-      basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
-      basketList.value
-        .filter((basketItem) => reelSelectedItems.value.some((item) => item.imageName === basketItem.imageName))
-        .forEach((item) => {
-          item.usedInSlideShow = false
-          basketSelectedItems.value.push(item)
-        })
-      updateSlideInfo()
-    }
-    reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
-  })
-}
-
-function updateSlideInfo() {
-  let absoluteIndex = 1
-  slideShow.value.blocks.forEach((block) => {
-    block.slides.forEach((slide, index) => {
-      slide.block = block
-      slide.inBlockIndex = index + 1
-      slide.blockIndex = block.index
-      slide.absoluteIndex = absoluteIndex++
-    })
-  })
-}
-
-function save() {
-  const data = toData(slideShow.value)
-  useSlideShowApi().saveSlideShow(editorStore.path, editorStore.name, data).then((response) => {
-    console.log('Save response', response)
-  })
-}
-
-const labelEditor = ref<typeof LabelEditorDialog>()
-
-function editLabel(slide: Slide) {
-  console.log('Edit label', slide, labelEditor.value)
-  labelEditor.value?.open(slide)
-}
+// const labelEditor = ref<typeof LabelEditorDialog>()
+//
+// function editLabel(slide: Slide) {
+//   console.log('Edit label', slide, labelEditor.value)
+//   labelEditor.value?.open(slide)
+// }
 
 </script>
 
@@ -818,7 +1040,13 @@ function editLabel(slide: Slide) {
 }
 
 .selected {
-  background-color: #2c549b;
+  background: repeating-linear-gradient(
+    45deg,
+    #545454,
+    #545454 5px,
+    #49497a 5px,
+    #49497a 10px
+  );
 }
 
 .dragBox {
@@ -855,9 +1083,51 @@ function editLabel(slide: Slide) {
   background-color: #139ff7 !important;
 }
 
+.drag-marker-in-group-visible {
+  background-color: #f7b613 !important;
+}
+
 .missing {
   position: absolute;
   left: 100px;
 }
 
+.group-container {
+  border-left: 2px solid #362c2c;
+  box-sizing: border-box;
+}
+
+.group-head {
+  background-color: #362c2c;
+  margin-left: 0.5em;
+  margin-right: calc(0.5em + 2px);
+}
+
+.selected-group-head {
+  background: repeating-linear-gradient(
+    45deg,
+    #362c2c,
+    #362c2c 5px,
+    #414173 5px,
+    #414173 10px
+  );
+}
+
+.group-slide {
+  border-left: 2px solid #362c2c;
+  box-sizing: border-box;
+  padding-left: 1.5em !important;
+  background-color: #443d3d;
+  margin-left: calc(0.5em);
+}
+
+.selected-group-slide {
+  background: repeating-linear-gradient(
+    45deg,
+    #443d3d,
+    #443d3d 5px,
+    #414173 5px,
+    #414173 10px
+  );
+}
 </style>

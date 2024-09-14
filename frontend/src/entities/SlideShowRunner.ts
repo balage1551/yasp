@@ -97,7 +97,7 @@ export class SlideShowRunner {
   }
 
   updateCurrentSlide() {
-    let slide = this.slideShow.slides[this.currentSlideIndex]
+    let slide : Slide = this.slideShow.slides[this.currentSlideIndex]
     this.currentSlide = slide
     if (slide.type === 'group') {
       slide = slide.slides[this.currentInGroupIndex]
