@@ -70,8 +70,8 @@
               </template>
               <template #append>
                 <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
-                <!--                                <div style="width: 10px"></div>-->
-                <!--                                <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>-->
+                <div style="width: 10px"></div>
+                <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>
 
               </template>
               <v-list-item-title class="font-weight-bold mb-2">
@@ -130,9 +130,14 @@
                           </template>
                         </v-text-field>
                       </v-col>
-
                     </v-row>
                   </v-container>
+
+                  <template #append>
+                    <v-icon size="40" @click.stop="deleteSlide(slide)" >mdi-delete</v-icon>
+                    <v-icon size="40" @click.stop="toggleOpen(slide)" >mdi-chevron-down</v-icon>
+
+                  </template>
                 </v-list-item>
               </template>
 
@@ -164,12 +169,13 @@
                   <template #prepend>
                     <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
                            :src="inGroupSlide.thumbnail" aspect-ratio="1"></v-img>
-                    <v-icon class="missing" size="60" v-if="inGroupSlide.missing === true" color="red">mdi-alert</v-icon>
+                    <v-icon class="missing" size="60" v-if="inGroupSlide.missing === true" color="red">mdi-alert
+                    </v-icon>
                   </template>
                   <template #append>
                     <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
-                    <!--                                <div style="width: 10px"></div>-->
-                    <!--                                <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>-->
+                    <div style="width: 10px"></div>
+                    <v-icon size="40" @click.exact="deleteSlide(inGroupSlide)">mdi-delete</v-icon>
 
                   </template>
                   <v-list-item-title class="font-weight-bold mb-2">
@@ -387,11 +393,12 @@
   </application-layout>
   <div id="dragHolder" class="dragBox">
     <div class="drag-label">
-      {{ $t('editor.drag', {count: basketSelectedItems.length}) }}
+      {{ $t('editor.drag', {count: dragSelectedItems.length}) }}
     </div>
-    <v-img v-if="basketSelectedItems.length > 5" class="drag-thumbnail thumbnail" style="left:13px; top:13px; "></v-img>
-    <v-img v-if="basketSelectedItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
-    <img :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail" style="left:5px; top:5px;">
+    <v-img v-if="dragSelectedItems.length > 5" class="drag-thumbnail thumbnail" style="left:13px; top:13px; "></v-img>
+    <v-img v-if="dragSelectedItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
+    <img ref="dragHolderTopImage" :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail"
+         style="left:5px; top:5px;">
   </div>
   <!--  <label-editor-dialog ref="labelEditor"></label-editor-dialog>-->
 </template>
@@ -422,7 +429,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
 import { getAllImageSlides, nextUID } from '@/entities/SlideShowUtils'
-import { useConfirmDialog } from '@/modules/dialog/confirmDialog'
+import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -566,10 +573,22 @@ function scan() {
 //
 const basketList = ref<BasketItem[]>([])
 const unusedItemsInBasket = computed(() => basketList.value.filter((item) => item.usedInSlideShow === false))
+
 //
-// function deleteSlide(slide: Slide) {
-//   reelRemoveItems([slide])
-// }
+function deleteSlide(slide: Slide) {
+  reelRemoveItems([slide])
+}
+
+// TODO: Note, this has a bug in 3.7.1, but fixed, so next version will be OK
+function toggleOpen(slide: GroupSlide) {
+  if (openedGroups.value.includes(slide.uid)) {
+    const i = openedGroups.value.indexOf(slide.uid)
+    openedGroups.value.splice(i, 1)
+  } else {
+    openedGroups.value.push(slide.uid)
+  }
+}
+
 //
 // function addBlock() {
 //   const ss = slideShow.value
@@ -605,6 +624,7 @@ enum DragType {
 }
 
 const dragType = ref<DragType | undefined>()
+const dragSelectedItems = ref<Slide[] | BasketItem[]>([])
 const dragHolderThumbnail = ref<string | undefined>()
 
 const dragTarget = ref<undefined | DragTargetInfo>()
@@ -711,10 +731,15 @@ function handleSlideDragLeave(event: DragEvent, isMarker: boolean = false) {
   event.preventDefault()
 }
 
+const dragHolderTopImage = ref<HTMLImageElement>()
+
 function initializeDragHolder(event: DragEvent) {
   const dragPreview = document.getElementById('dragHolder')!
   dragPreview.style.display = 'flex'
-
+  // console.log('Drag holder thumbnail:', dragHolderThumbnail.value)
+  if (dragHolderThumbnail.value) {
+    dragHolderTopImage.value!.src = dragHolderThumbnail.value
+  }
   event.dataTransfer!.setDragImage(dragPreview, 60, 40)
 }
 
@@ -735,10 +760,9 @@ function dragEnd(event: DragEvent) {
   event.preventDefault()
   const dragPreview = document.getElementById('dragHolder')!
   dragPreview.style.display = 'none'
-  // TODO Remove items to basket
-  // if (dragType.value === DragType.REEL_REORDER && !dragTarget.value) {
-  //   reelRemoveItems(reelSelectedItems.value)
-  // }
+  if (dragType.value === DragType.REEL_REORDER && !dragTarget.value) {
+    reelRemoveItems(reelSelectedItems.value)
+  }
   clearDragTarget()
   blockDragCounter.value = 0
   slideDragCounter.value = 0
@@ -746,7 +770,7 @@ function dragEnd(event: DragEvent) {
 }
 
 function isDragTargetSelected(slide: Slide | undefined, group: GroupSlide | undefined) {
-  console.log('isDragTargetSelected', slide?.index, group?.index, dragTarget.value?.nextSlide?.index, dragTarget.value?.group?.index, dragTarget.value?.invalid)
+  // console.log('isDragTargetSelected', slide?.index, group?.index, dragTarget.value?.nextSlide?.index, dragTarget.value?.group?.index, dragTarget.value?.invalid)
   if (!dragTarget.value) return false
   if (dragTarget.value.invalid === true) return false
   return slide === dragTarget.value.nextSlide && group === dragTarget.value.group
@@ -802,6 +826,7 @@ function basketDragStart(event: DragEvent, image: BasketItem) {
     else basketSelectedItems.value = [image]
   }
   console.log('Drag start', basketSelectedItems.value.map((s) => s.thumbnail))
+  dragSelectedItems.value = [...basketSelectedItems.value]
   dragHolderThumbnail.value = basketSelectedItems.value[0]?.thumbnail
   initializeDragHolder(event)
   dragType.value = DragType.BASKET_TO_REEL
@@ -916,18 +941,32 @@ function reelDragStart(event: DragEvent, slide: Slide) {
       }
     }
   }
-
+  dragSelectedItems.value = [...reelSelectedItems.value]
   dragHolderThumbnail.value = firstImage?.thumbnail
   initializeDragHolder(event)
   dragType.value = DragType.REEL_REORDER
 }
 
 function reelIsInvalidDragTarget(target: DragTargetInfo) {
-  console.warn('Valid drag target', target)
+  // console.warn('Valid drag target', target)
   if (target.group !== undefined) {
     return reelSelectedItems.value.some((s) => s.type === 'group')
   }
   return false
+}
+
+function updateIndex(rootChanged: boolean, changedGroups: Set<GroupSlide>) {
+  console.log('Update index', rootChanged, changedGroups)
+  if (rootChanged) {
+    for (let i = 0; i < slideShow.value.slides.length; i++) {
+      slideShow.value.slides[i].index = i + 1
+    }
+  }
+  changedGroups.forEach((group) => {
+    for (let i = 0; i < group.slides.length; i++) {
+      group.slides[i].index = i + 1
+    }
+  })
 }
 
 function dropReelReorder(target: DragTargetInfo) {
@@ -972,7 +1011,7 @@ function dropReelReorder(target: DragTargetInfo) {
   const targetContainer = targetGroup ?? slideShow.value
   let insertIndex: number
   if (target.nextSlide !== undefined) {
-    insertIndex = targetContainer.slides.findIndex((slide : Slide) => slide.index >= (target.nextSlide!.index))
+    insertIndex = targetContainer.slides.findIndex((slide: Slide) => slide.index >= (target.nextSlide!.index))
     if (insertIndex === -1) {
       insertIndex = targetContainer.slides.length
     }
@@ -983,61 +1022,57 @@ function dropReelReorder(target: DragTargetInfo) {
   console.log('Insert at', insertIndex, targetContainer)
 
   targetContainer.slides.splice(insertIndex, 0, ...selected)
-  if (rootChanged) {
-    for (let i = 0; i < slideShow.value.slides.length; i++) {
-      slideShow.value.slides[i].index = i + 1
-    }
-  }
-  changedGroups.forEach((group) => {
-    for (let i = 0; i < group.slides.length; i++) {
-      group.slides[i].index = i + 1
-    }
-  })
+  updateIndex(rootChanged, changedGroups)
 
   console.log('Updated', slideShow.value)
 }
 
-//
-// function reelRemoveItems(items: Slide[]) {
-//   createConfirmDialog({
-//     title: '@editor.deleteSlide.title',
-//     titleColor: 'red',
-//     content: '@editor.deleteSlide.message',
-//     buttons: ButtonSet.yesNo
-//   }).then((button) => {
-//     if (button === Button.YES) {
-//       console.log('Reel remove items', items)
-//       items.forEach((slide) => {
-//         const block = slide.block
-//         const index = block.slides.indexOf(slide)
-//         if (index !== -1) {
-//           block.slides.splice(index, 1)
-//         }
-//       })
-//       basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
-//       basketList.value
-//         .filter((basketItem) => reelSelectedItems.value.some((item) => item.imageName === basketItem.imageName))
-//         .forEach((item) => {
-//           item.usedInSlideShow = false
-//           basketSelectedItems.value.push(item)
-//         })
-//       updateSlideInfo()
-//     }
-//     reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
-//   })
-// }
-//
-// function updateSlideInfo() {
-//   let absoluteIndex = 1
-//   slideShow.value.slides.forEach((block) => {
-//     block.slides.forEach((slide, index) => {
-//       slide.block = block
-//       slide.inBlockIndex = index + 1
-//       slide.blockIndex = block.index
-//       slide.absoluteIndex = absoluteIndex++
-//     })
-//   })
-// }
+function addToBasket(slide: Slide, select: boolean = false): ImageSlide[] {
+  const slides: ImageSlide[] = (slide.type === 'group') ? slide.slides : [slide]
+
+  basketList.value
+    .filter((basketItem) => slides.some((item) => item.imageName === basketItem.imageName))
+    .forEach((item) => {
+      basketSelectedItems.value.push(item)
+      item.usedInSlideShow = false
+    }
+    )
+
+  return slides
+}
+
+function reelRemoveItems(items: Slide[]) {
+  createConfirmDialog({
+    title: '@editor.deleteSlide.title',
+    titleColor: 'red',
+    content: '@editor.deleteSlide.message',
+    buttons: ButtonSet.yesNo
+  }).then((button) => {
+    if (button === Button.YES) {
+      console.log('Reel remove items', items)
+      basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
+
+      const changedGroups = new Set<GroupSlide>()
+      let rootChanged = false
+      items.forEach((slide: Slide) => {
+        const isGroup = slide.type === 'group'
+        const group = isGroup ? undefined : slide.group
+        const targetContainer = group ?? slideShow.value
+        addToBasket(slide, true)
+        targetContainer.slides.splice(slide.index - 1, 1)
+        if (group) {
+          changedGroups.add(group)
+        } else {
+          rootChanged = true
+        }
+      })
+
+      updateIndex(rootChanged, changedGroups)
+      reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
+    }
+  })
+}
+
 //
 // function save() {
 //   const data = toData(slideShow.value)
