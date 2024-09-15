@@ -168,3 +168,7 @@ export function getAllImageSlides(slideShow: SlideShow) : ImageSlide[] {
     }
   })
 }
+
+export function fullIndex(slide: Slide) {
+  return ((slide.type === 'image' && slide.group) ? slide.group.index + '.' : '') + slide.index
+}

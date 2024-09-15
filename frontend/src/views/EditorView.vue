@@ -2,7 +2,7 @@
   <application-layout>
 
     <v-container fluid class="pa-0 ma-0 ">
-      <v-sheet ref="header" class="header px-2 " variant="elevated" >
+      <v-sheet ref="header" class="header px-2 " variant="elevated">
         <v-container fluid class="ma-0">
           <v-row>
             <v-col cols="4">
@@ -55,9 +55,14 @@
             </div>
 
             <!-- Main slide -->
-            <v-list-item v-if="slide.type === 'image'" class="slide-box"
-                         :class="{ 'selected': reelSelectedItems.includes(slide) }"
-                         style="border-left: 2px solid transparent; "
+            <image-slide-box v-if="slide.type === 'image'"
+                             :slide="slide"
+                             :slide-show="slideShow"
+                         :selected=" reelSelectedItems.includes(slide)"
+
+                             @delete="deleteSlide(slide)"
+                              @editLabel="editLabel(slide)"
+
                          @dragover.prevent
                          :draggable="true"
                          @click="reelSelectItem($event, slide)"
@@ -68,43 +73,7 @@
                          @dragstart="reelDragStart($event, slide)"
                          @dragend="dragEnd"
             >
-
-              <template #prepend>
-                <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
-                       :src="slide.thumbnail" aspect-ratio="1"></v-img>
-                <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>
-              </template>
-              <template #append>
-                <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
-                <div style="width: 10px"></div>
-                <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>
-
-              </template>
-              <v-list-item-title class="font-weight-bold mb-2">
-                {{ slide.index }} - {{ slide.imageName }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
-                                                <v-icon @click.stop="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
-                <!--                                <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
-                <!--                                  <template v-slot:activator="{ props }">-->
-                <!--                                    <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
-                <!--                                    <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>-->
-                <!--                                    <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>-->
-                <!--                                  </template>-->
-                <!--                                  <v-list>-->
-                <!--                                    <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">-->
-                <!--                                      <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>-->
-                <!--                                    </v-list-item>-->
-                <!--                                    <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">-->
-                <!--                                      <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>-->
-                <!--                                    </v-list-item>-->
-                <!--                                    <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">-->
-                <!--                                      <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>-->
-                <!--                                    </v-list-item>-->
-                <!--                                  </v-list>-->
-                <!--                                </v-menu>-->
-              </v-list-item-subtitle>
-            </v-list-item>
+            </image-slide-box>
 
             <!-- Group slide -->
             <v-list-group v-else class="group-container" :value="slide.uid">
@@ -130,8 +99,8 @@
                                       @click.stop
                                       variant="outlined">
                           <template #prepend>
-                            <div class="block-index">
-                              {{ slide.index }} ({{ (slide as GroupSlide).slides.length }})
+                            <div class="slide-index">
+                              {{ slide.index }}
                             </div>
                           </template>
                         </v-text-field>
@@ -159,56 +128,27 @@
                 </div>
 
                 <!-- Group slide item -->
-                <v-list-item v-if="inGroupSlide.type === 'image'" class="slide-box group-slide"
-                             :class="{ 'selected-group-slide': reelSelectedItems.includes(inGroupSlide) }"
-                             @dragover.prevent
-                             @click="reelSelectItem($event, inGroupSlide)"
-                             :draggable="true"
-                             @dragenter="handleSlideDragEnter($event, inGroupSlide)"
-                             @dragleave="handleSlideDragLeave($event)"
-                             @drop="drop($event, dragTarget)"
+                <image-slide-box :slide="inGroupSlide"
+                                 :isGroupSlide="true"
+                                 :slide-show="slideShow"
+                                 :inGroupSlide-show="slideShow"
+                                 :selected=" reelSelectedItems.includes(inGroupSlide)"
 
-                             @dragstart="reelDragStart($event, inGroupSlide)"
-                             @dragend="dragEnd"
+                                 @delete="deleteSlide(inGroupSlide)"
+                                 @editLabel="editLabel(inGroupSlide)"
+
+                                 @dragover.prevent
+                                 :draggable="true"
+                                 @click="reelSelectItem($event, inGroupSlide)"
+                                 @dragenter="handleSlideDragEnter($event, inGroupSlide)"
+                                 @dragleave="handleSlideDragLeave($event)"
+                                 @drop="drop($event, dragTarget)"
+
+                                 @dragstart="reelDragStart($event, inGroupSlide)"
+                                 @dragend="dragEnd"
                 >
+                </image-slide-box>
 
-                  <template #prepend>
-                    <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
-                           :src="inGroupSlide.thumbnail" aspect-ratio="1"></v-img>
-                    <v-icon class="missing" size="60" v-if="inGroupSlide.missing === true" color="red">mdi-alert
-                    </v-icon>
-                  </template>
-                  <template #append>
-                    <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
-                    <div style="width: 10px"></div>
-                    <v-icon size="40" @click.exact="deleteSlide(inGroupSlide)">mdi-delete</v-icon>
-
-                  </template>
-                  <v-list-item-title class="font-weight-bold mb-2">
-                    {{ fullIndex(inGroupSlide) }} - {{ inGroupSlide.imageName }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-icon @click.stop="editLabel(inGroupSlide)" :style="'color:'+ (inGroupSlide.label ? 'white' : 'gray')">mdi-tag</v-icon>
-                    <!--                                <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
-                    <!--                                  <template v-slot:activator="{ props }">-->
-                    <!--                                    <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
-                    <!--                                    <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>-->
-                    <!--                                    <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>-->
-                    <!--                                  </template>-->
-                    <!--                                  <v-list>-->
-                    <!--                                    <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">-->
-                    <!--                                      <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>-->
-                    <!--                                    </v-list-item>-->
-                    <!--                                    <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">-->
-                    <!--                                      <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>-->
-                    <!--                                    </v-list-item>-->
-                    <!--                                    <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">-->
-                    <!--                                      <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>-->
-                    <!--                                    </v-list-item>-->
-                    <!--                                  </v-list>-->
-                    <!--                                </v-menu>-->
-                  </v-list-item-subtitle>
-                </v-list-item>
               </template>
 
               <!-- Group slide item post marker -->
@@ -406,7 +346,7 @@
     <img ref="dragHolderTopImage" :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail"
          style="left:5px; top:5px;">
   </div>
-    <label-editor-dialog v-if="showLabelEditor" @close="hideLabelEditor" ref="labelEditor"></label-editor-dialog>
+  <label-editor-dialog v-if="showLabelEditor" @close="hideLabelEditor" ref="labelEditor"></label-editor-dialog>
 </template>
 <script setup lang="ts">
 
@@ -434,9 +374,10 @@ import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
-import { getAllImageSlides, nextUID } from '@/entities/SlideShowUtils'
+import { fullIndex, getAllImageSlides, nextUID } from '@/entities/SlideShowUtils'
 import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
 import LabelEditorDialog from '@/dialogs/LabelEditorDialog.vue'
+import ImageSlideBox from '@/components/ImageSlideBox.vue'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -865,10 +806,6 @@ let reelLastSelectedItem: Slide | undefined
 
 // let reelLastSelectedItemIndex: number = -1
 
-function fullIndex(slide: Slide) {
-  return ((slide.type === 'image' && slide.group) ? slide.group.index + '.' : '') + slide.index
-}
-
 function reelSelectItem(event: MouseEvent | KeyboardEvent, slide: Slide) {
   const itemIndex = slide.index!
   // console.log('Select item', itemIndex, slide)
@@ -1088,7 +1025,7 @@ function newGroupInsert(dragTarget: DragTargetInfo | undefined) {
   // console.log('insert', dragTarget)
   if (dragTarget !== undefined) {
     const index = dragTarget?.nextSlide ? dragTarget.nextSlide.index! - 1 : slideShow.value.slides.length
-    const group : GroupSlide = {
+    const group: GroupSlide = {
       uid: nextUID(),
       type: 'group',
       index,
@@ -1185,16 +1122,6 @@ function hideLabelEditor() {
   border-bottom: 3px solid #00000000;
 }
 
-.slide-show-info-title {
-  background-color: #8689ea;
-  color: whitesmoke;
-}
-
-.slides-title {
-  background-color: #8689ea;
-  color: whitesmoke;
-}
-
 .slide-box {
   height: 90px;
   background-color: #555555;
@@ -1261,11 +1188,6 @@ function hideLabelEditor() {
   background-color: #f7b613 !important;
 }
 
-.missing {
-  position: absolute;
-  left: 100px;
-}
-
 .group-container {
   border-left: 2px solid #362c2c;
   box-sizing: border-box;
@@ -1287,21 +1209,11 @@ function hideLabelEditor() {
   );
 }
 
-.group-slide {
-  border-left: 2px solid #362c2c;
-  box-sizing: border-box;
-  padding-left: 1.5em !important;
-  background-color: #443d3d;
-  margin-left: calc(0.5em);
+.slide-index {
+  margin-right: 1em;
+  font-size: 150%;
+  width: 50px;
+  color: #ffffff80;
 }
 
-.selected-group-slide {
-  background: repeating-linear-gradient(
-    45deg,
-    #443d3d,
-    #443d3d 5px,
-    #414173 5px,
-    #414173 10px
-  );
-}
 </style>
