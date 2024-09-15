@@ -596,6 +596,7 @@ type DragTargetInfo = {
   nextSlide: Slide | undefined
   group: GroupSlide | undefined
   type: 'slide' | 'marker'
+  invalid?: boolean | undefined
 }
 
 enum DragType {
@@ -679,15 +680,15 @@ function handleSlideDragEnter(event: DragEvent, slide: Slide | undefined, isMark
         nextSlide = nextIndex === undefined ? undefined : slideShow.value.slides[nextIndex]
       }
     }
-    if (dragType.value === DragType.REEL_REORDER && !reelIsValidDragTarget(group, nextSlide)) {
-      clearDragTarget()
-      return
-    }
     newTarget = {
       nextSlide,
       group,
       type: isMarker ? 'marker' : 'slide'
     }
+  }
+
+  if (dragType.value === DragType.REEL_REORDER) {
+    newTarget.invalid = reelIsInvalidDragTarget(newTarget)
   }
   if (newTarget.type === dragTarget.value?.type && newTarget.group === dragTarget.value?.group && newTarget.nextSlide === dragTarget.value?.nextSlide) {
     return
@@ -721,7 +722,7 @@ function drop(event: DragEvent, target: DragTargetInfo | undefined) {
   event.preventDefault()
   event.stopPropagation()
   console.log('Dropped: ', toRaw(target))
-  if (target) {
+  if (target && !target.invalid) {
     if (dragType.value === DragType.BASKET_TO_REEL) {
       dropBasketToReel(target)
     } else if (dragType.value === DragType.REEL_REORDER) {
@@ -745,7 +746,9 @@ function dragEnd(event: DragEvent) {
 }
 
 function isDragTargetSelected(slide: Slide | undefined, group: GroupSlide | undefined) {
+  console.log('isDragTargetSelected', slide?.index, group?.index, dragTarget.value?.nextSlide?.index, dragTarget.value?.group?.index, dragTarget.value?.invalid)
   if (!dragTarget.value) return false
+  if (dragTarget.value.invalid === true) return false
   return slide === dragTarget.value.nextSlide && group === dragTarget.value.group
 }
 
@@ -919,13 +922,12 @@ function reelDragStart(event: DragEvent, slide: Slide) {
   dragType.value = DragType.REEL_REORDER
 }
 
-// TODO Prevent drag if group is selected
-function reelIsValidDragTarget(group: GroupSlide | undefined, target: Slide | undefined) {
-  console.warn('Valid drag target', group, target)
-  if (group !== undefined) {
-    return !reelSelectedItems.value.some((s) => s.type === 'group')
+function reelIsInvalidDragTarget(target: DragTargetInfo) {
+  console.warn('Valid drag target', target)
+  if (target.group !== undefined) {
+    return reelSelectedItems.value.some((s) => s.type === 'group')
   }
-  return true
+  return false
 }
 
 function dropReelReorder(target: DragTargetInfo) {
