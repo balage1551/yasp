@@ -29,6 +29,8 @@ export type TimedTrigger = {
   time?: number
 }
 
+export const POSSIBLE_KEYS = ['enter', 'space', 'tab'] as const
+
 export type KeyTrigger = {
   type: 'key'
   keys?: string[],

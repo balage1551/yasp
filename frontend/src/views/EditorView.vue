@@ -58,20 +58,20 @@
             <image-slide-box v-if="slide.type === 'image'"
                              :slide="slide"
                              :slide-show="slideShow"
-                         :selected=" reelSelectedItems.includes(slide)"
+                             :selected=" reelSelectedItems.includes(slide)"
 
                              @delete="deleteSlide(slide)"
-                              @editLabel="editLabel(slide)"
+                             @editLabel="editLabel(slide)"
 
-                         @dragover.prevent
-                         :draggable="true"
-                         @click="reelSelectItem($event, slide)"
-                         @dragenter="handleSlideDragEnter($event, slide)"
-                         @dragleave="handleSlideDragLeave($event)"
-                         @drop="drop($event, dragTarget)"
+                             @dragover.prevent
+                             :draggable="true"
+                             @click="reelSelectItem($event, slide)"
+                             @dragenter="handleSlideDragEnter($event, slide)"
+                             @dragleave="handleSlideDragLeave($event)"
+                             @drop="drop($event, dragTarget)"
 
-                         @dragstart="reelDragStart($event, slide)"
-                         @dragend="dragEnd"
+                             @dragstart="reelDragStart($event, slide)"
+                             @dragend="dragEnd"
             >
             </image-slide-box>
 
@@ -104,6 +104,16 @@
                             </div>
                           </template>
                         </v-text-field>
+                      </v-col>
+                      <v-col cols="2" class="mt-2">
+                        {{ $t('editor.groupTrigger') }}
+                        <trigger-settings-popup v-model="(slide as GroupSlide).slideTrigger"
+                                                :inherited="slideShow.groupTrigger ?? DEFAULT_GROUP_TRIGGER"></trigger-settings-popup>
+                      </v-col>
+                      <v-col cols="2" class="mt-2">
+                        {{ $t('editor.groupSlideTrigger') }}
+                        <trigger-settings-popup v-model="slide.trigger"
+                                                :inherited="slideShow.groupSlideTrigger ?? DEFAULT_GROUP_SLIDE_TRIGGER"></trigger-settings-popup>
                       </v-col>
                     </v-row>
                   </v-container>
@@ -337,14 +347,16 @@
       </v-sheet>
     </v-container>
   </application-layout>
-  <div id="dragHolder" class="dragBox">
-    <div class="drag-label">
-      {{ $t('editor.drag', {count: dragSelectedItems.length}) }}
+  <div style="position: absolute; left: -1000px; top:-1000px;">
+    <div id="dragHolder" class="dragBox">
+      <div class="drag-label">
+        {{ $t('editor.drag', {count: dragSelectedItems.length}) }}
+      </div>
+      <v-img v-if="dragSelectedItems.length > 5" class="drag-thumbnail thumbnail" style="left:13px; top:13px; "></v-img>
+      <v-img v-if="dragSelectedItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
+      <img ref="dragHolderTopImage" :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail"
+           style="left:5px; top:5px;">
     </div>
-    <v-img v-if="dragSelectedItems.length > 5" class="drag-thumbnail thumbnail" style="left:13px; top:13px; "></v-img>
-    <v-img v-if="dragSelectedItems.length > 1" class="drag-thumbnail thumbnail" style="left:9px; top:9px; "></v-img>
-    <img ref="dragHolderTopImage" :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail"
-         style="left:5px; top:5px;">
   </div>
   <label-editor-dialog v-if="showLabelEditor" @close="hideLabelEditor" ref="labelEditor"></label-editor-dialog>
 </template>
@@ -369,7 +381,15 @@ import {
 } from 'vuetify/components'
 import { computed, nextTick, onMounted, Ref, ref } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
-import { BasketItem, GroupSlide, ImageSlide, Slide, SlideShow } from '@/entities/SlideShowTypes'
+import {
+  BasketItem,
+  DEFAULT_GROUP_SLIDE_TRIGGER,
+  DEFAULT_GROUP_TRIGGER,
+  GroupSlide,
+  ImageSlide,
+  Slide,
+  SlideShow
+} from '@/entities/SlideShowTypes'
 import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
@@ -378,6 +398,7 @@ import { fullIndex, getAllImageSlides, nextUID } from '@/entities/SlideShowUtils
 import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
 import LabelEditorDialog from '@/dialogs/LabelEditorDialog.vue'
 import ImageSlideBox from '@/components/ImageSlideBox.vue'
+import TriggerSettingsPopup from '@/components/TriggerSettingsPopup.vue'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -393,7 +414,7 @@ const reelToolbarSize = useElementSize(reelToolbar)
 const windowSize = useWindowSize()
 
 const boxHeight = computed(() => {
-  return 'height:' + (windowSize.height.value - headerSize.height.value - reelToolbarSize.height.value) + 'px'
+  return 'height:' + (windowSize.height.value - headerSize.height.value - reelToolbarSize.height.value - 8) + 'px'
 })
 
 const openedGroups = ref<number[]>([])
@@ -460,65 +481,6 @@ function scan() {
   })
 }
 
-//
-// function setAtTheEnd(block: SlideShowBlock, type: 'continue' | 'hold' | 'loop') {
-//   block.atTheEnd = { type }
-// }
-//
-// function indexOfBlock(block: SlideShowBlock) {
-//   return slideShow.value.slides.indexOf(block)
-// }
-//
-// function mergeUp(block: SlideShowBlock) {
-//   const ss = slideShow.value
-//   const i = indexOfBlock(block)
-//   const prevBlock = ss.slides[i - 1]
-//   block.slides.forEach((s) => {
-//     prevBlock.slides.push(s)
-//     s.block = prevBlock
-//     s.blockIndex = prevBlock.index
-//     s.inBlockIndex = prevBlock.slides.length
-//   })
-//   ss.slides.splice(i, 1)
-//   for (let p = i; p < ss.slides.length; p++) {
-//     ss.slides[p].index = p + 1
-//   }
-//   const obidx = openedGroups.value.indexOf(block.uid)
-//   if (obidx !== -1) {
-//     openedGroups.value.splice(obidx, 1)
-//   }
-// }
-//
-// const reelBlocks = ref()
-//
-// function splitBlock(block: SlideShowBlock, slide: Slide) {
-//   const ss = slideShow.value
-//   const i = indexOfBlock(block)
-//   const newBlock: SlideShowBlock = { slides: [], index: i + 1, uid: nextUID() }
-//   ss.slides.splice(i + 1, 0, newBlock)
-//   let ibi = 1
-//   const startIndex = slide.inBlockIndex! - 1
-//   for (let p = startIndex; p < block.slides.length; p++) {
-//     const s = block.slides[p]
-//     s.inBlockIndex = ibi++
-//     s.block = newBlock
-//     s.blockIndex = newBlock.index
-//     newBlock.slides.push(s)
-//   }
-//   block.slides.splice(startIndex, block.slides.length)
-//   for (let p = i; p < ss.slides.length; p++) {
-//     ss.slides[p].index = p + 1
-//   }
-//
-//   nextTick(() => {
-//     openedGroups.value.push(newBlock.uid)
-//   })
-// }
-//
-// watchEffect(() => {
-//   console.log('OB', [...openedGroups.value])
-// })
-//
 const basketList = ref<BasketItem[]>([])
 const unusedItemsInBasket = computed(() => basketList.value.filter((item) => item.usedInSlideShow === false))
 
@@ -536,24 +498,6 @@ function toggleOpen(slide: GroupSlide) {
     openedGroups.value.push(slide.uid)
   }
 }
-
-//
-// function addBlock() {
-//   const ss = slideShow.value
-//   const newBlock: SlideShowBlock = { slides: [], index: ss.slides.length + 1, uid: nextUID() }
-//   ss.slides.push(newBlock)
-//   openedGroups.value.push(newBlock.uid)
-// }
-//
-// function setTransition(slide: Slide, type: 'continue' | 'hold' | 'holdOnce') {
-//   if (type === 'continue') {
-//     delete slide.trigger
-//   } else if (type === 'hold') {
-//     slide.trigger = { type: 'key' }
-//   } else if (type === 'holdOnce') {
-//     slide.trigger = { type: 'key', onlyOnce: true }
-//   }
-// }
 
 // =====================================================================================================================
 // Drag and drop base
@@ -1068,8 +1012,21 @@ function hideLabelEditor() {
 }
 
 </script>
+<style>
+:root {
+  --split-size: 60%;
+}
 
-<style scoped>
+</style>
+<style>
+
+:root {
+  --split-size: 50%;
+}
+
+body {
+  overflow-y: hidden;
+}
 
 .header {
   background-color: #1e1f38;
@@ -1079,34 +1036,34 @@ function hideLabelEditor() {
 .reel {
   position: absolute;
   background-color: #333333;
-  width: 50%;
+  width: var(--split-size);
   color: whitesmoke;
   overflow-y: auto !important;
 }
 
 .reel-toolbar {
   background-color: #333333;
-  width: 50%;
+  width: var(--split-size);
   color: whitesmoke;
-}
-
-.basket-toolbar {
-  position: absolute;
-  background-color: #333333;
-  border-left: 1px solid whitesmoke;
-  width: 50%;
-  color: whitesmoke;
-  left: 50%;
 }
 
 .basket {
   position: absolute;
   background-color: #333333;
   border-left: 1px solid whitesmoke;
-  width: 50%;
-  left: 50%;
+  width: calc(100% - var(--split-size));
+  left: var(--split-size);
   color: whitesmoke;
   overflow-y: auto;
+}
+
+.basket-toolbar {
+  position: absolute;
+  background-color: #333333;
+  border-left: 1px solid whitesmoke;
+  width: calc(100% - var(--split-size));
+  color: whitesmoke;
+  left: var(--split-size);
 }
 
 .reel-list, .basket-list {

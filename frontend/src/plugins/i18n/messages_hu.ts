@@ -101,7 +101,9 @@ export const messagesHU = merge({}, messagesCommon, {
       continue: 'Folytatás',
       hold: 'Megállás',
       holdOnce: 'Megállás első alkalommal',
-    }
+    },
+    groupSlideTrigger: 'Dia:',
+    groupTrigger: 'Csoport:'
   },
   slideShowInfo: {
     title: 'A rendelkezésre álló diavetítések',
