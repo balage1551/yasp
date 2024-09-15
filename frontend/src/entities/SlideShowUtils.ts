@@ -159,7 +159,7 @@ export function toData(slideShow: SlideShow) : SlideShowData {
   return data
 }
 
-export function getAllSlides(slideShow: SlideShow) : Slide[] {
+export function getAllImageSlides(slideShow: SlideShow) : ImageSlide[] {
   return slideShow.slides.flatMap(slide => {
     if (slide.type === 'group') {
       return (slide as GroupSlide).slides

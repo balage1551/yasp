@@ -40,7 +40,7 @@
 
             <!-- Pre main slide marker -->
             <div class="drag-marker"
-                 :class="{ 'drag-marker-visible' : isDragTargetSelected( slide ) }"
+                 :class="{ 'drag-marker-visible' : isDragTargetSelected( slide, undefined ) }"
                  @dragenter="handleSlideDragEnter($event, slide, true)"
                  @dragleave="handleSlideDragLeave($event, true)"
                  @drop="drop($event, dragTarget)"
@@ -119,13 +119,13 @@
                   >
                     <v-row>
                       <v-col cols="6">
-                        <v-text-field v-model="slide.name" :label="$t('editor.block.name')" hide-details
+                        <v-text-field v-model="(slide as GroupSlide).name" :label="$t('editor.block.name')" hide-details
                                       density="compact"
                                       @click.stop
                                       variant="outlined">
                           <template #prepend>
                             <div class="block-index">
-                              {{ slide.index }} ({{ slide.slides.length }})
+                              {{ slide.index }} ({{ (slide as GroupSlide).slides.length }})
                             </div>
                           </template>
                         </v-text-field>
@@ -136,35 +136,35 @@
                 </v-list-item>
               </template>
 
-              <template v-for="groupSlide in slide.slides" :key="groupSlide.uid">
+              <template v-for="inGroupSlide in (slide as GroupSlide).slides" :key="inGroupSlide.uid">
 
                 <!-- Group slide item pre marker -->
                 <div class="drag-marker"
-                     :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( groupSlide, slide) }"
-                     @dragenter="handleSlideDragEnter($event, groupSlide, true)"
+                     :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( inGroupSlide, slide as GroupSlide) }"
+                     @dragenter="handleSlideDragEnter($event, inGroupSlide, true)"
                      @dragleave="handleSlideDragLeave($event, true)"
                      @drop="drop($event, dragTarget)"
                      @dragover.prevent>
                 </div>
 
                 <!-- Group slide item -->
-                <v-list-item v-if="groupSlide.type === 'image'" class="slide-box group-slide"
-                             :class="{ 'selected-group-slide': reelSelectedItems.includes(groupSlide) }"
+                <v-list-item v-if="inGroupSlide.type === 'image'" class="slide-box group-slide"
+                             :class="{ 'selected-group-slide': reelSelectedItems.includes(inGroupSlide) }"
                              @dragover.prevent
-                             @click="reelSelectItem($event, groupSlide)"
+                             @click="reelSelectItem($event, inGroupSlide)"
                              :draggable="true"
-                             @dragenter="handleSlideDragEnter($event, groupSlide)"
+                             @dragenter="handleSlideDragEnter($event, inGroupSlide)"
                              @dragleave="handleSlideDragLeave($event)"
                              @drop="drop($event, dragTarget)"
 
-                             @dragstart="reelDragStart($event, groupSlide)"
+                             @dragstart="reelDragStart($event, inGroupSlide)"
                              @dragend="dragEnd"
                 >
 
                   <template #prepend>
                     <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
-                           :src="groupSlide.thumbnail" aspect-ratio="1"></v-img>
-                    <v-icon class="missing" size="60" v-if="groupSlide.missing === true" color="red">mdi-alert</v-icon>
+                           :src="inGroupSlide.thumbnail" aspect-ratio="1"></v-img>
+                    <v-icon class="missing" size="60" v-if="inGroupSlide.missing === true" color="red">mdi-alert</v-icon>
                   </template>
                   <template #append>
                     <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
@@ -173,7 +173,7 @@
 
                   </template>
                   <v-list-item-title class="font-weight-bold mb-2">
-                    {{ groupSlide.index }} - {{ groupSlide.imageName }}
+                    {{ inGroupSlide.index }} - {{ inGroupSlide.imageName }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
                     <!--                                <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
@@ -201,7 +201,7 @@
 
               <!-- Group slide item post marker -->
               <div class="drag-marker"
-                   :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( undefined, slide) }"
+                   :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( undefined, slide as GroupSlide) }"
                    @dragenter="handleSlideDragEnter($event, undefined, true)"
                    @dragleave="handleSlideDragLeave($event, true)"
                    @drop="drop($event, dragTarget)"
@@ -212,12 +212,11 @@
           </template>
 
           <div class="drag-marker"
-               :class="{ 'drag-marker-visible' : isDragTargetSelected( undefined) }"
+               :class="{ 'drag-marker-visible' : isDragTargetSelected( undefined, undefined) }"
                @dragenter="handleSlideDragEnter($event, undefined, true)"
                @dragleave="handleSlideDragLeave($event,  true)"
                @drop="drop($event, dragTarget)"
                @dragover.prevent>
-
           </div>
           <!--            :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"-->
           <!--            @dragenter="handleSlideDragEnter($event, block, slide, true)"-->
@@ -422,7 +421,7 @@ import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
-import { getAllSlides, nextUID } from '@/entities/SlideShowUtils'
+import { getAllImageSlides, nextUID } from '@/entities/SlideShowUtils'
 import { useConfirmDialog } from '@/modules/dialog/confirmDialog'
 
 const editorApi = useEditorApi()
@@ -453,10 +452,10 @@ onMounted(async () => {
   console.log('slideShow', slideShow.value)
   if (slideShow.value) {
     openedGroups.value.slice(0, openedGroups.value.length)
-    slideShow.value.slides.forEach((slide) => {
+    slideShow.value.slides.forEach((slide: Slide) => {
       if (slide.type === 'group') {
         openedGroups.value.push(slide.uid)
-        slide.slides.forEach((slide) => {
+        slide.slides.forEach((slide: ImageSlide) => {
           if (slide.thumbnail === undefined) {
             resourceApi.requestThumbnail(slide.imageName).then((response) => {
               slide.thumbnail = URL.createObjectURL(response)
@@ -478,8 +477,8 @@ function scan() {
   editorApi.scanDirectory(editorStore.path).then((response) => {
     console.log('scan response', response)
     if (response.successful) {
-      const slideImageNames = new Map<string, Slide>()
-      getAllSlides(slideShow.value).forEach((slide) => slideImageNames.set(slide.imageName, slide))
+      const slideImageNames = new Map<string, ImageSlide>()
+      getAllImageSlides(slideShow.value).forEach((slide) => slideImageNames.set(slide.imageName, slide))
       basketList.value = []
       response.images?.forEach((file) => {
         const usedInSlideShow = slideImageNames.has(file.fileName)
@@ -595,7 +594,7 @@ const unusedItemsInBasket = computed(() => basketList.value.filter((item) => ite
 
 type DragTargetInfo = {
   nextSlide: Slide | undefined
-  group: Slide | undefined
+  group: GroupSlide | undefined
   type: 'slide' | 'marker'
 }
 
@@ -617,37 +616,38 @@ function clearDragTarget() {
   dragTarget.value = undefined
 }
 
-function handleBlockDragEnter(event: DragEvent, block: SlideShowBlock) {
-  // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
-  blockDragCounter.value++
-  // }
-  event.preventDefault()
-  console.log('Drag enter on block', block.index, blockDragCounter.value)
-  const newTarget: DragTargetInfo = {
-    block,
-    nextSlide: (openedGroups.value.includes(block.uid)) ? (block.slides.length === 0 ? undefined : block.slides[0]) : undefined,
-    type: 'block'
-  }
-  if (newTarget.block === dragTarget.value?.block && newTarget.nextSlide === dragTarget.value?.nextSlide) {
-    return
-  }
-  console.log('Drag target', newTarget.block.index, newTarget.nextSlide?.inBlockIndex)
-  dragTarget.value = newTarget
-}
-
-function handleBlockDragLeave(event: DragEvent, block: SlideShowBlock) {
-  // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
-  blockDragCounter.value--
-  if (blockDragCounter.value <= 0) {
-    if (dragTarget.value?.type === 'block') {
-      console.log('Drag leave on block', block.index, blockDragCounter.value, dragTarget.value?.type)
-      clearDragTarget()
-      blockDragCounter.value = 0
-    }
-  }
-  // }
-  event.preventDefault()
-}
+//
+// function handleBlockDragEnter(event: DragEvent) {
+//   // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
+//   blockDragCounter.value++
+//   // }
+//   event.preventDefault()
+//   console.log('Drag enter on block', block.index, blockDragCounter.value)
+//   const newTarget: DragTargetInfo = {
+//     block,
+//     nextSlide: (openedGroups.value.includes(block.uid)) ? (block.slides.length === 0 ? undefined : block.slides[0]) : undefined,
+//     type: 'block'
+//   }
+//   if (newTarget.block === dragTarget.value?.block && newTarget.nextSlide === dragTarget.value?.nextSlide) {
+//     return
+//   }
+//   console.log('Drag target', newTarget.block.index, newTarget.nextSlide?.inBlockIndex)
+//   dragTarget.value = newTarget
+// }
+//
+// function handleBlockDragLeave(event: DragEvent, block: SlideShowBlock) {
+//   // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
+//   blockDragCounter.value--
+//   if (blockDragCounter.value <= 0) {
+//     if (dragTarget.value?.type === 'block') {
+//       console.log('Drag leave on block', block.index, blockDragCounter.value, dragTarget.value?.type)
+//       clearDragTarget()
+//       blockDragCounter.value = 0
+//     }
+//   }
+//   // }
+//   event.preventDefault()
+// }
 
 function handleSlideDragEnter(event: DragEvent, slide: Slide | undefined, isMarker: boolean = false) {
   // if (event.target === event.currentTarget || (event.currentTarget as Node).contains(event.target as Node)) {
@@ -692,7 +692,7 @@ function handleSlideDragEnter(event: DragEvent, slide: Slide | undefined, isMark
   if (newTarget.type === dragTarget.value?.type && newTarget.group === dragTarget.value?.group && newTarget.nextSlide === dragTarget.value?.nextSlide) {
     return
   }
-  console.log('Drag target', newTarget.nextSlide?.index, newTarget.inGroup)
+  console.log('Drag target', newTarget.nextSlide?.index, inGroup)
   dragTarget.value = newTarget
 }
 
@@ -747,10 +747,6 @@ function dragEnd(event: DragEvent) {
 function isDragTargetSelected(slide: Slide | undefined, group: GroupSlide | undefined) {
   if (!dragTarget.value) return false
   return slide === dragTarget.value.nextSlide && group === dragTarget.value.group
-}
-
-function findSlideByIndex(index: number) {
-  return slideShow.value.slides.flatMap((block) => block.slides).find((slide) => slide.absoluteIndex === index)
 }
 
 // =====================================================================================================================
@@ -845,10 +841,11 @@ function dropBasketToReel(target: DragTargetInfo) {
 
 const reelSelectedItems = ref<Slide[]>([])
 let reelLastSelectedItem: Slide | undefined
+
 // let reelLastSelectedItemIndex: number = -1
 
 function fullIndex(slide: Slide) {
-  return (slide.group ? slide.group.index + '.' : '') + slide.index
+  return ((slide.type === 'image' && slide.group) ? slide.group.index + '.' : '') + slide.index
 }
 
 function reelSelectItem(event: MouseEvent | KeyboardEvent, slide: Slide) {
@@ -859,8 +856,10 @@ function reelSelectItem(event: MouseEvent | KeyboardEvent, slide: Slide) {
   const reelLastSelectedItemIndex = reelLastSelectedItem?.index
   if (event.shiftKey && reelLastSelectedItemIndex !== undefined) {
     // Shift+Click: Select range
-    if (reelLastSelectedItem.group === slide.group) {
-      const targetGroup = slide.group ?? slideShow.value
+    const group = slide.type === 'image' && slide.group !== undefined ? slide.group : undefined
+    const lastGroup = reelLastSelectedItem?.type === 'image' ? reelLastSelectedItem.group : undefined
+    if (group === lastGroup) {
+      const targetGroup = group ?? slideShow.value
       const start = Math.min(reelLastSelectedItemIndex, itemIndex)
       const end = Math.max(reelLastSelectedItemIndex, itemIndex)
       if (!event.ctrlKey) {
@@ -890,12 +889,32 @@ function reelSelectItem(event: MouseEvent | KeyboardEvent, slide: Slide) {
 }
 
 function reelDragStart(event: DragEvent, slide: Slide) {
-  console.log('Drag start', slide.absoluteIndex)
+  console.log('Drag start', slide.index)
   if (!reelSelectedItems.value.includes(slide)) {
     if (event.ctrlKey) reelSelectItem(event, slide)
     else reelSelectedItems.value = [slide]
   }
-  dragHolderThumbnail.value = reelSelectedItems.value[0]?.thumbnail
+
+  let firstImage: ImageSlide | undefined
+  for (let i = 0; i < reelSelectedItems.value.length; i++) {
+    if (reelSelectedItems.value[i].type === 'image') {
+      firstImage = reelSelectedItems.value[i] as ImageSlide
+      break
+    }
+  }
+  if (!firstImage) {
+    for (let i = 0; i < reelSelectedItems.value.length; i++) {
+      if (reelSelectedItems.value[i].type === 'group') {
+        const g = (reelSelectedItems.value[i] as GroupSlide)
+        if (g.slides.length > 0) {
+          firstImage = g.slides[0]
+          break
+        }
+      }
+    }
+  }
+
+  dragHolderThumbnail.value = firstImage?.thumbnail
   initializeDragHolder(event)
   dragType.value = DragType.REEL_REORDER
 }
@@ -912,6 +931,9 @@ function reelIsValidDragTarget(group: GroupSlide | undefined, target: Slide | un
 function dropReelReorder(target: DragTargetInfo) {
   console.log('Reel reorder', reelSelectedItems.value.map((s) => fullIndex(s)))
   const selected = reelSelectedItems.value.filter((s) => {
+    if (s.type === 'group') {
+      return true
+    }
     return s.group === undefined || !reelSelectedItems.value.includes(s.group)
   }).sort((s1, s2) => fullIndex(s1) < fullIndex(s2) ? -1 : 1)
   console.log('Selected', selected.map((s) => fullIndex(s)))
@@ -920,8 +942,8 @@ function dropReelReorder(target: DragTargetInfo) {
   let rootChanged = false
   const targetGroup = target.group
 
-  selected.forEach((slide) => {
-    if (slide.group) {
+  selected.forEach((slide: Slide) => {
+    if (slide.type === 'image' && slide.group) {
       const index = slide.group.slides.indexOf(slide)
       slide.group.slides.splice(index, 1)
       changedGroups.add(slide.group)
@@ -930,10 +952,12 @@ function dropReelReorder(target: DragTargetInfo) {
       slideShow.value.slides.splice(index, 1)
       rootChanged = true
     }
-    if (targetGroup !== undefined) {
-      slide.group = targetGroup
-    } else {
-      delete slide.group
+    if (slide.type === 'image') {
+      if (targetGroup !== undefined) {
+        slide.group = targetGroup
+      } else {
+        delete slide.group
+      }
     }
   })
 
@@ -945,8 +969,8 @@ function dropReelReorder(target: DragTargetInfo) {
 
   const targetContainer = targetGroup ?? slideShow.value
   let insertIndex: number
-  if (target.nextSlide) {
-    insertIndex = targetContainer.slides.findIndex((slide) => slide.index >= target.nextSlide?.index)
+  if (target.nextSlide !== undefined) {
+    insertIndex = targetContainer.slides.findIndex((slide : Slide) => slide.index >= (target.nextSlide!.index))
     if (insertIndex === -1) {
       insertIndex = targetContainer.slides.length
     }
@@ -970,6 +994,7 @@ function dropReelReorder(target: DragTargetInfo) {
 
   console.log('Updated', slideShow.value)
 }
+
 //
 // function reelRemoveItems(items: Slide[]) {
 //   createConfirmDialog({
