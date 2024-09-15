@@ -23,37 +23,18 @@
               <v-list-item-subtitle>
                 <v-icon @click.stop="emit('editLabel')" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag
                 </v-icon>
-                <v-menu :id="'trigger-'+slide.uid" location="bottom" @click.stop="">
-                  <template v-slot:activator="{ props }">
-                    <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer
-                    </v-icon>
-                    <v-icon v-bind="props"
-                            v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard
-                    </v-icon>
-                    <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>
-                  </template>
-                  <v-list>
-                    <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">
-                      <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">
-                      <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">
-                      <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
+                <trigger-settings-popup v-model="slide.trigger" :inherited="inheritedTrigger" ></trigger-settings-popup>
               </v-list-item-subtitle>
             </v-list-item>
 </template>
 <script setup lang="ts">
 
-import { VIcon, VImg, VList, VListItem, VListItemSubtitle, VListItemTitle, VMenu } from 'vuetify/components'
-import { ImageSlide, SlideShow } from '@/entities/SlideShowTypes'
+import { VIcon, VImg, VListItem, VListItemSubtitle, VListItemTitle } from 'vuetify/components'
+import { DEFAULT_GROUP_SLIDE_TRIGGER, DEFAULT_TRIGGER, ImageSlide, SlideShow, Trigger } from '@/entities/SlideShowTypes'
 import useResourceApi from '@/api/resourceApi'
-import { useAttrs } from 'vue'
-import { fullIndex } from '../entities/SlideShowUtils'
+import { computed, Ref, useAttrs } from 'vue'
+import { fullIndex } from '@/entities/SlideShowUtils'
+import TriggerSettingsPopup from '@/components/TriggerSettingsPopup.vue'
 
 // const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -73,6 +54,20 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits(['delete', 'editLabel'])
 
 const attrs = useAttrs()
+
+const inheritedTrigger : Ref<Trigger> = computed(() => {
+  let trigger: Trigger | undefined
+  if (props.slide.group) {
+    trigger = props.slide.group.trigger
+    if (trigger === undefined) {
+      trigger = props.slideShow.groupSlideTrigger ?? DEFAULT_GROUP_SLIDE_TRIGGER
+    }
+  } else {
+    trigger = props.slideShow.trigger ?? DEFAULT_TRIGGER
+  }
+  return trigger
+})
+
 </script>
 
 <style>

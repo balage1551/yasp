@@ -73,6 +73,12 @@ export type ImageSlide = ImageSlideData & SlideBase & {
 
 export type Slide = ImageSlide | GroupSlide
 
+export const DEFAULT_TRIGGER_TIME = 3000
+export const DEFAULT_TRIGGER_KEYS = ['enter', 'space']
+export const DEFAULT_TRIGGER: Trigger = { type: 'key', keys: DEFAULT_TRIGGER_KEYS }
+export const DEFAULT_GROUP_TRIGGER: Trigger = { type: 'key', keys: DEFAULT_TRIGGER_KEYS }
+export const DEFAULT_GROUP_SLIDE_TRIGGER: Trigger = { type: 'timed', time: DEFAULT_TRIGGER_TIME }
+
 export type SlideShowData = {
   trigger?: Trigger // Default trigger for individual images
   groupTrigger?: Trigger // Default trigger for groups exits
