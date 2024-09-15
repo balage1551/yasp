@@ -129,7 +129,6 @@
 import {
   VBtn,
   VCard,
-  VSelect,
   VCardActions,
   VCardText,
   VCardTitle,
@@ -140,13 +139,13 @@ import {
   VIcon,
   VImg,
   VRow,
+  VSelect,
   VSpacer,
   VTextField
 } from 'vuetify/components'
 import { LabelInfo, Slide } from '@/entities/SlideShowTypes'
-import { computed, ref, watchEffect } from 'vue'
+import { ref, watch, watchEffect } from 'vue'
 import useResourceApi from '@/api/resourceApi'
-import { labelStyles } from '@/entities/SlideShowUtils'
 import { useSlideStore } from '@/stores/slideStore'
 import LabelHandler from '@/components/LabelHandler.vue'
 
@@ -182,6 +181,7 @@ watchEffect(() => {
 })
 
 function open(s : Slide) {
+  console.log('open', s)
   slide.value = s
   isOutlined.value = s.label?.outlined !== undefined
   label.value = s.label
@@ -199,9 +199,9 @@ function open(s : Slide) {
         }
       }
 
-  isOpen.value = true
   useResourceApi().requestImage(s.imageName).then(response => {
     image.value = URL.createObjectURL(response)
+    isOpen.value = true
   })
 }
 
@@ -214,6 +214,14 @@ function remove() {
   delete slide.value!.label
   isOpen.value = false
 }
+
+const emit = defineEmits(['close'])
+
+watch(isOpen, (v) => {
+  if (!v) {
+    emit('close')
+  }
+})
 
 defineExpose({
   open

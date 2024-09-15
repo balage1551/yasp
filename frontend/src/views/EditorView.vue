@@ -84,7 +84,7 @@
                 {{ slide.index }} - {{ slide.imageName }}
               </v-list-item-title>
               <v-list-item-subtitle>
-                <!--                                <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
+                                                <v-icon @click.stop="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>
                 <!--                                <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
                 <!--                                  <template v-slot:activator="{ props }">-->
                 <!--                                    <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
@@ -188,7 +188,7 @@
                     {{ fullIndex(inGroupSlide) }} - {{ inGroupSlide.imageName }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    <!--                                <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
+                    <v-icon @click.stop="editLabel(inGroupSlide)" :style="'color:'+ (inGroupSlide.label ? 'white' : 'gray')">mdi-tag</v-icon>
                     <!--                                <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
                     <!--                                  <template v-slot:activator="{ props }">-->
                     <!--                                    <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
@@ -406,7 +406,7 @@
     <img ref="dragHolderTopImage" :src="dragHolderThumbnail" alt="" class="drag-thumbnail thumbnail"
          style="left:5px; top:5px;">
   </div>
-  <!--  <label-editor-dialog ref="labelEditor"></label-editor-dialog>-->
+    <label-editor-dialog v-if="showLabelEditor" @close="hideLabelEditor" ref="labelEditor"></label-editor-dialog>
 </template>
 <script setup lang="ts">
 
@@ -436,6 +436,7 @@ import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
 import { getAllImageSlides, nextUID } from '@/entities/SlideShowUtils'
 import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
+import LabelEditorDialog from '@/dialogs/LabelEditorDialog.vue'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -1113,12 +1114,21 @@ function newGroupInsert(dragTarget: DragTargetInfo | undefined) {
 //   })
 // }
 
-// const labelEditor = ref<typeof LabelEditorDialog>()
-//
-// function editLabel(slide: Slide) {
-//   console.log('Edit label', slide, labelEditor.value)
-//   labelEditor.value?.open(slide)
-// }
+const labelEditor = ref<typeof LabelEditorDialog>()
+const showLabelEditor = ref(false)
+
+function editLabel(slide: Slide) {
+  console.log('Edit label', slide, labelEditor.value)
+  showLabelEditor.value = true
+  nextTick(() => {
+    labelEditor.value?.open(slide)
+  })
+}
+
+function hideLabelEditor() {
+  console.log('Hide label editor')
+  showLabelEditor.value = false
+}
 
 </script>
 
