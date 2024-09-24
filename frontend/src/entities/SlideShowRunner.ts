@@ -1,5 +1,6 @@
 import { GroupSlide, ImageSlide, Slide, SlideShow } from '@/entities/SlideShowTypes'
 import { useEventListener } from '@vueuse/core'
+import { Ref, ref } from 'vue'
 
 export enum SlideShowState {
   PLAYING = 'playing',
@@ -10,9 +11,9 @@ export enum SlideShowState {
 
 export class SlideShowRunner {
   slideShow: SlideShow
-  currentSlideIndex: number = 0
-  currentInGroupIndex: number = 0
-  currentSlide: Slide | undefined = undefined
+  currentSlideIndex: Ref<number> = ref(0)
+  currentInGroupIndex: Ref<number> = ref(0)
+  currentSlide: Ref<Slide | undefined> = ref(undefined)
   currentImageSlide: ImageSlide | undefined = undefined
   onSwap: (slideInfo: ImageSlide | undefined) => void
   onStateChange: (state: SlideShowState) => void = () => {
@@ -60,8 +61,8 @@ export class SlideShowRunner {
           this.setState(SlideShowState.PLAYING)
           this.showNext()
         }
-      } else if (this.state === SlideShowState.PLAYING && this.currentSlide?.type === 'group') {
-        const trigger = this.getGroupTrigger(this.currentSlide)
+      } else if (this.state === SlideShowState.PLAYING && this.currentSlide.value?.type === 'group') {
+        const trigger = this.getGroupTrigger(this.currentSlide.value)
         if (trigger.type === 'key' && trigger.keys?.includes(event.code.toLowerCase())) {
           this.showNext('force')
         }
@@ -84,11 +85,11 @@ export class SlideShowRunner {
         //     break
         // }
       } else if (event.code === 'ArrowRight' && this.state !== SlideShowState.FINISHED) {
-        // this.setState(SlideShowState.MANUAL_HOLD)
-        // this.showNext()
+        this.setState(SlideShowState.MANUAL_HOLD)
+        this.showNext('at-end')
       } else if (event.code === 'ArrowLeft' && this.state !== SlideShowState.FINISHED) {
-        // this.setState(SlideShowState.MANUAL_HOLD)
-        // this.showPrev()
+        this.setState(SlideShowState.MANUAL_HOLD)
+        this.showPrev()
       } else if ((event.code === 'Enter' || event.code === 'Space') && this.state !== SlideShowState.FINISHED) {
         // this.nextBlock()
       }
@@ -97,10 +98,10 @@ export class SlideShowRunner {
   }
 
   updateCurrentSlide() {
-    let slide : Slide = this.slideShow.slides[this.currentSlideIndex]
-    this.currentSlide = slide
+    let slide : Slide = this.slideShow.slides[this.currentSlideIndex.value]
+    this.currentSlide.value = slide
     if (slide.type === 'group') {
-      slide = slide.slides[this.currentInGroupIndex]
+      slide = slide.slides[this.currentInGroupIndex.value]
     }
     this.currentImageSlide = slide
     return slide
@@ -145,49 +146,61 @@ export class SlideShowRunner {
     return slide.trigger ?? this.slideShow.groupTrigger ?? { type: 'key', keys: ['space'] }
   }
 
-  // showPrev() {
-  //   if (this.countdown !== null) {
-  //     clearTimeout(this.countdown)
-  //   }
-  //   console.log('Prev: ', this.currentSlideIndex, ' of ', this.info.blocks[this.currentBlockIndex].slides.length, 'on block', this.currentBlockIndex)
-  //   this.currentSlideIndex--
-  //   if (this.currentSlideIndex < 0) {
-  //     this.currentBlockIndex--
-  //     if (this.currentBlockIndex < 0) {
-  //       this.currentBlockIndex = 0
-  //       this.currentSlideIndex = 0
-  //     } else {
-  //       this.currentSlideIndex = this.info.blocks[this.currentBlockIndex].slides.length - 1
-  //     }
-  //   }
-  //   console.log('Prev (set): ', this.currentSlideIndex, ' of ', this.info.blocks[this.currentBlockIndex].slides.length, 'on block', this.currentBlockIndex)
-  //   this.show()
-  // }
-  //
+  showPrev() {
+    if (this.countdown !== null) {
+      clearTimeout(this.countdown)
+    }
+    this.countdown = null
+    const slide = this.currentSlide.value
+    let moveOn = false
+    if (slide?.type === 'group') {
+      this.currentInGroupIndex.value--
+      if (this.currentInGroupIndex.value < 0) {
+        this.currentInGroupIndex.value = 0
+        moveOn = true
+      }
+    }
+    if (moveOn || slide?.type === 'image') {
+      if (this.currentSlideIndex.value > 0) {
+        this.currentSlideIndex.value--
+        if (this.slideShow.slides[this.currentSlideIndex.value].type === 'group') {
+          this.currentInGroupIndex.value = (this.slideShow.slides[this.currentSlideIndex.value] as GroupSlide).slides.length - 1
+        }
+      } else if (!moveOn) {
+        return
+      }
+    }
+    console.log('Showing prev', this.currentSlideIndex.value, this.currentInGroupIndex.value)
+    this.updateCurrentSlide()
+    this.show()
+  }
+
   showNext(exitGroup : 'force' | 'at-end' | undefined = undefined) {
     if (this.countdown !== null) {
       clearTimeout(this.countdown)
     }
     this.countdown = null
-    const slide = this.currentSlide
+    const slide = this.currentSlide.value
     let moveOn = false
     if (slide?.type === 'group' && exitGroup !== 'force') {
-      this.currentInGroupIndex++
-      if (this.currentInGroupIndex >= slide.slides.length) {
-        this.currentInGroupIndex = 0
+      this.currentInGroupIndex.value++
+      if (this.currentInGroupIndex.value >= slide.slides.length) {
+        this.currentInGroupIndex.value = 0
         if (exitGroup === 'at-end') {
           moveOn = true
         }
       }
     }
     if (moveOn || exitGroup === 'force' || slide?.type === 'image') {
-      this.currentSlideIndex++
-      if (this.currentSlideIndex >= this.slideShow.slides.length) {
+      this.currentSlideIndex.value++
+      this.currentInGroupIndex.value = 0
+      if (this.currentSlideIndex.value >= this.slideShow.slides.length) {
         this.setState(SlideShowState.FINISHED)
         this.onSwap(undefined)
         return
       }
     }
+    console.log('Showing next', this.currentSlideIndex.value, this.currentInGroupIndex.value)
     this.updateCurrentSlide()
     this.show()
   }
