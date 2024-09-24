@@ -32,65 +32,56 @@ export class SlideShowRunner {
     this.onStateChange = onStateChange
   }
 
-  // private nextBlock() {
-  //   if (this.state === SlideShowState.FINISHED) {
-  //     return
-  //   }
-  //   this.currentBlockIndex++
-  //   this.currentSlideIndex = 0
-  //   if (this.currentBlockIndex >= this.info.blocks.length) {
-  //     this.setState(SlideShowState.FINISHED)
-  //     this.onSwap(undefined)
-  //   } else {
-  //     if (this.state !== SlideShowState.MANUAL_HOLD) {
-  //       this.setState(SlideShowState.PLAYING)
-  //     }
-  //     this.show()
-  //   }
-  // }
-
   start() {
     this.updateCurrentSlide()
     this.setState(SlideShowState.PLAYING)
     this.show()
 
-    useEventListener(window, 'keydown', (event) => {
-      if (this.state === SlideShowState.HOLD_ON_SLIDE && this.currentImageSlide) {
-        const trigger = this.getTrigger(this.currentImageSlide)
-        if (trigger.type === 'key' && trigger.keys?.includes(event.code.toLowerCase())) {
-          this.setState(SlideShowState.PLAYING)
-          this.showNext()
-        }
-      } else if (this.state === SlideShowState.MANUAL_HOLD && event.code === 'Space') {
+    useEventListener(window, 'click', (event) => {
+      if (event.button === 0) {
+        this.handleKey('Space')
+      }
+    })
+
+    useEventListener(window, 'keydown', (event) => this.handleKey(event.code))
+  }
+
+  handleKey(code: string) {
+    if (this.state === SlideShowState.HOLD_ON_SLIDE && this.currentImageSlide) {
+      const trigger = this.getTrigger(this.currentImageSlide)
+      if (trigger.type === 'key' && trigger.keys?.includes(code.toLowerCase())) {
         this.setState(SlideShowState.PLAYING)
         this.showNext()
-      } else if (this.state === SlideShowState.PLAYING && this.currentSlide.value?.type === 'group') {
-        const trigger = this.getGroupTrigger(this.currentSlide.value)
-        if (trigger.type === 'key' && trigger.keys?.includes(event.code.toLowerCase())) {
-          this.showNext('force')
-        }
       }
-      if (event.code === 'KeyP' || event.code === 'Pause') {
-        switch (this.state) {
-          case SlideShowState.PLAYING:
-            this.setState(SlideShowState.MANUAL_HOLD)
-            break
-          case SlideShowState.MANUAL_HOLD:
-            this.setState(SlideShowState.PLAYING)
-            this.showNext()
-            break
-        }
-      } else if (event.code === 'ArrowRight' && this.state !== SlideShowState.FINISHED) {
-        this.setState(SlideShowState.MANUAL_HOLD)
-        this.showNext('at-end')
-      } else if (event.code === 'ArrowLeft' && this.state !== SlideShowState.FINISHED) {
-        this.setState(SlideShowState.MANUAL_HOLD)
-        this.showPrev()
-      } else if ((event.code === 'Enter' || event.code === 'Space') && this.state !== SlideShowState.FINISHED) {
-        // this.nextBlock()
+    } else if (this.state === SlideShowState.MANUAL_HOLD && code === 'Space') {
+      this.setState(SlideShowState.PLAYING)
+      this.showNext()
+    } else if (this.state === SlideShowState.PLAYING && this.currentSlide.value?.type === 'group') {
+      const trigger = this.getGroupTrigger(this.currentSlide.value)
+      if (trigger.type === 'key' && trigger.keys?.includes(code.toLowerCase())) {
+        this.showNext('force')
       }
-      console.log('Key pressed', event.code)
-    })
+    }
+    if (code === 'KeyP' || code === 'Pause') {
+      switch (this.state) {
+        case SlideShowState.PLAYING:
+          this.setState(SlideShowState.MANUAL_HOLD)
+          break
+        case SlideShowState.MANUAL_HOLD:
+          this.setState(SlideShowState.PLAYING)
+          this.showNext()
+          break
+      }
+    } else if (code === 'ArrowRight' && this.state !== SlideShowState.FINISHED) {
+      this.setState(SlideShowState.MANUAL_HOLD)
+      this.showNext('at-end')
+    } else if (code === 'ArrowLeft' && this.state !== SlideShowState.FINISHED) {
+      this.setState(SlideShowState.MANUAL_HOLD)
+      this.showPrev()
+    } else if ((code === 'Enter' || code === 'Space') && this.state !== SlideShowState.FINISHED) {
+      // this.nextBlock()
+    }
+    console.log('Key pressed', code)
   }
 
   updateCurrentSlide() {

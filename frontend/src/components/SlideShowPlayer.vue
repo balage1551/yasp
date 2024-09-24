@@ -11,6 +11,29 @@
       {{ currentSlide?.imageName }} ({{ fullIndex(currentSlide) }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
       {{ state }} <br/>
     </div>
+    <div v-if="showHelp" class="keyboard-help">
+      <div class="center">
+        <div class="float-start kbc-button mr-2">Space</div> vagy  <div class="ml-2 float-start kbc-button mr-5">Enter</div> <span> Lejátszás közben kép léptetése</span>
+      </div>
+      <div class="center">
+        <div class="float-start kbc-button mr-5">P</div> <span> Vetítés megállítása</span>
+      </div>
+      <div class="center">
+        <div class="float-start kbc-button mr-5">←</div> <span> Vetítés megállítása és visszalépés</span>
+      </div>
+      <div class="center">
+        <div class="float-start kbc-button mr-5">→</div> <span> Vetítés megállítása és előrelépés</span>
+      </div>
+      <div class="center">
+        <div class="float-start kbc-button mr-5">Space</div> <span> Megállított vetítés újraindítása</span>
+      </div>
+      <div class="center">
+        <div class="float-start kbc-button mr-5">I</div> <span> Dia információk megjelenítése és elrejtése</span>
+      </div>
+      <div class="center">
+        <div class="float-start kbc-button mr-5">F1</div> <span> Ez a súgó megjelenítése és elrejtése</span>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -36,7 +59,8 @@ const state = ref<SlideShowState>()
 const total = ref(0)
 const progress = ref(0)
 const currentSlide = ref<ImageSlide | undefined>()
-const showInfo = ref(true)
+const showInfo = ref(false)
+const showHelp = ref(false)
 const slideShowRunner = shallowRef<SlideShowRunner>()
 
 onMounted(() => {
@@ -52,6 +76,9 @@ onMounted(() => {
   useEventListener(window, 'keydown', (event) => {
     if (event.key === 'i') {
       showInfo.value = !showInfo.value
+    } else if (event.key === 'F1') {
+      showHelp.value = !showHelp.value
+      event.preventDefault()
     }
   })
   show.start()
@@ -111,6 +138,22 @@ function setOsdIcon(s: SlideShowState) {
   color: #aaaaaa;
   background-color: #55555580;
   padding: 2px 5px;
+}
+
+.keyboard-help {
+  position: fixed;
+  bottom: 30px;
+  left: 20px;
+  z-index: 1000;
+  color: #ffffff;
+  background-color: #55555580;
+  padding: 10px;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1em;
 }
 
 </style>
