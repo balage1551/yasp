@@ -22,5 +22,6 @@ data class SlideShowRequestDTO (
 data class SlideShowSaveRequestDTO (
     val path: String,
     val name: String,
+    val originalName: String,
     val data: JsonNode
 )

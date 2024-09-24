@@ -90,7 +90,6 @@ export type SlideShowData = {
 
 export type SlideShow = SlideShowData & {
   slides: Slide[]
-  totalSlides: number
 }
 
 export type BasketItem = {

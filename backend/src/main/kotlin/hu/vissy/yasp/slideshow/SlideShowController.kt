@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.JsonParser
 import hu.vissy.yasp.arguments
 import hu.vissy.yasp.module.web.BaseController
+import hu.vissy.yasp.utils.jsonObject
 import hu.vissy.yasp.utils.toPretty
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -48,11 +49,15 @@ class SlideShowController : BaseController() {
     @PostMapping("/save")
     fun save(@RequestBody @Validated request: SlideShowSaveRequestDTO): ResponseEntity<String> {
         if (arguments.editorDisabled) {
-            return ResponseEntity("", HttpStatus.FORBIDDEN)
+            return ResponseEntity(jsonObject { "error" += "saveNotAllowed" }.toString(), HttpStatus.FORBIDDEN)
         }
-        log.info("Requesting slideShow save: ${request.path} ${request.name}\n${request.data}")
+        log.info("Requesting slideShow save: ${request.path} ${request.name} [originally: ${request.originalName}]\n${request.data}")
         val slideShowDefinitionFile: Path = Path.of("${request.path}/${request.name}.yasp.json")
         val backupSlideShowDefinitionFile: Path = Path.of("${request.path}/${request.name}.yasp.old.json")
+        if (Files.exists(slideShowDefinitionFile) && request.originalName != request.name) {
+            log.error("Slide show already exists: $slideShowDefinitionFile")
+            return ResponseEntity(jsonObject { "error" += "alreadyExists" }.toString(), HttpStatus.BAD_REQUEST)
+        }
         if (Files.exists(backupSlideShowDefinitionFile)) {
             Files.delete(backupSlideShowDefinitionFile)
         }
@@ -64,6 +69,6 @@ class SlideShowController : BaseController() {
         val gson = JsonParser.parseString(jsonString).asJsonObject
         Files.writeString(slideShowDefinitionFile, gson.toPretty())
 
-        return ResponseEntity("", HttpStatus.OK)
+        return ResponseEntity(jsonObject { "success" += true }.toString(), HttpStatus.OK)
     }
 }

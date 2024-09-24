@@ -9,12 +9,14 @@ export const useEditorStore =
     const enabled = ref<boolean>(false)
     const path = ref<string >('')
     const name = ref<string >('')
+    const originalName = ref<string >('')
     const slideShow = ref<SlideShow | undefined>(undefined)
 
     async function setCurrentSlideShow(p: string, n : string) {
       return useSlideShowApi().requestSlideShow(p, n).then((response) => {
         path.value = p
         name.value = n
+        originalName.value = n
         slideShow.value = processSlideShowData(response)
         return slideShow.value
       })
@@ -23,6 +25,7 @@ export const useEditorStore =
     return {
       path,
       name,
+      originalName,
       enabled,
       slideShow,
 

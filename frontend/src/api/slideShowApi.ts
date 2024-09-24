@@ -11,6 +11,12 @@ export type SlideShowList = {
   slideShows: SlideShowListItem[]
 }
 
+export type SaveResponse = {
+  success: true
+} | {
+  error: string
+}
+
 function listSlideShows(): Promise<SlideShowList> {
   return request({
     url: '/slide-show/list',
@@ -29,13 +35,14 @@ function requestSlideShow(path: string, name: string): Promise<SlideShowData> {
   })
 }
 
-function saveSlideShow(path: string, name: string, data: SlideShowData): Promise<string> {
+function saveSlideShow(path: string, name: string, originalName: string, data: SlideShowData): Promise<SaveResponse> {
   return request({
     url: '/slide-show/save',
     method: 'post',
     data: {
       path,
       name,
+      originalName,
       data
     }
   })

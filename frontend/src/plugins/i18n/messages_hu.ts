@@ -80,6 +80,7 @@ export const messagesHU = merge({}, messagesCommon, {
   enums: {
   },
   editor: {
+    scan: 'Beolvasás',
     title: 'Szerkesztő',
     directory: 'Könyvtár',
     name: 'Diavetítés neve',
@@ -102,7 +103,8 @@ export const messagesHU = merge({}, messagesCommon, {
       hold: 'Megállás',
       holdOnce: 'Megállás első alkalommal',
     },
-    groupSlideTrigger: 'Dia:',
+    trigger: 'Dia:',
+    groupSlideTrigger: 'Dia egy csoportban:',
     groupTrigger: 'Csoport:'
   },
   slideShowInfo: {
@@ -130,5 +132,8 @@ export const messagesHU = merge({}, messagesCommon, {
     },
     save: 'Mentés',
     remove: 'Eltávolítás',
+  },
+  saveError: {
+    alreadyExists: 'Mentés sikertelen: Már létezik ilyen nevű diavetítés',
   }
 })

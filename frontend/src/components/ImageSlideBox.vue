@@ -7,12 +7,13 @@
               <template #prepend>
                 <div class="slide-index">{{ fullIndex(slide)  }}</div>
 
-                <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
+                <v-img v-if="slide.missing !== true" class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
                        :src="slide.thumbnail" aspect-ratio="1"></v-img>
-                <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>
+                <div v-else class="thumbnail mr-2" >
+                  <v-icon class="justify-center" size="60"  color="red">mdi-alert</v-icon>
+                </div>
               </template>
               <template #append>
-                <!--                                <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
                 <div style="width: 10px"></div>
                 <v-icon size="40" @click="emit('delete')">mdi-delete</v-icon>
 
@@ -32,7 +33,7 @@
 import { VIcon, VImg, VListItem, VListItemSubtitle, VListItemTitle } from 'vuetify/components'
 import { DEFAULT_GROUP_SLIDE_TRIGGER, DEFAULT_TRIGGER, ImageSlide, SlideShow, Trigger } from '@/entities/SlideShowTypes'
 import useResourceApi from '@/api/resourceApi'
-import { computed, Ref, useAttrs } from 'vue'
+import { computed, useAttrs } from 'vue'
 import { fullIndex } from '@/entities/SlideShowUtils'
 import TriggerSettingsPopup from '@/components/TriggerSettingsPopup.vue'
 
@@ -55,7 +56,7 @@ const emit = defineEmits(['delete', 'editLabel'])
 
 const attrs = useAttrs()
 
-const inheritedTrigger : Ref<Trigger> = computed(() => {
+const inheritedTrigger = computed(() => {
   let trigger: Trigger | undefined
   if (props.slide.group) {
     trigger = props.slide.group.trigger
@@ -80,7 +81,7 @@ const inheritedTrigger : Ref<Trigger> = computed(() => {
   box-sizing: border-box;
   border-top: 3px solid #00000000;
   border-bottom: 3px solid #00000000;
-  height: 90px;
+  height: 94px;
   background-color: #555555;
   margin: 0 10px !important;
   padding-left: 24px !important;
@@ -96,6 +97,9 @@ const inheritedTrigger : Ref<Trigger> = computed(() => {
   width: 120px;
   height: 80px;
   background-color: #0d0d0d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .selected {
@@ -110,7 +114,8 @@ const inheritedTrigger : Ref<Trigger> = computed(() => {
 
 .missing {
   position: absolute;
-  left: 100px;
+  left: 130px;
+  top: 15px;
 }
 
 .selected-group-slide {

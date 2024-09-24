@@ -94,7 +94,9 @@ request.interceptors.response.use(
         } else if (url.includes('delete')) {
           errorMessageCode = 'common.deleteError'
         }
-        snackbarStore.addError('@' + errorMessageCode)
+        // if (!url.includes('thumbnail')) {
+        //   snackbarStore.addError('@' + errorMessageCode)
+        // }
       }
     }
 

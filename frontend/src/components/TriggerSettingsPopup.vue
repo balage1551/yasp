@@ -9,10 +9,10 @@
     </template>
     <v-sheet class="v-list pa-4 box" @click.stop>
       <div class="py-1 mb-2 trigger-selector">
-        <v-icon :class="{ 'trigger-selected': !isInherited && activeTrigger?.type=== 'timed', 'trigger-inherited': isInherited && props.inherited.type === 'timed'}"
+        <v-icon :class="{ 'trigger-selected': !isInherited && activeTrigger?.type === 'timed', 'trigger-inherited': isInherited && props.inherited.type === 'timed'}"
                 @click.stop="setType('timed')">mdi-timer
         </v-icon>
-        <v-icon :class="{ 'trigger-selected': !isInherited && activeTrigger?.type=== 'key', 'trigger-inherited': isInherited && props.inherited.type === 'key'}"
+        <v-icon :class="{ 'trigger-selected': !isInherited && activeTrigger?.type === 'key', 'trigger-inherited': isInherited && props.inherited.type === 'key'}"
                 @click.stop="setType('key')">mdi-mouse
         </v-icon>
         <v-icon :class="{ 'trigger-selected': isInherited }" class="float-end" @click.stop="setType(undefined)">
@@ -44,7 +44,7 @@ import {
   TimedTrigger,
   Trigger
 } from '@/entities/SlideShowTypes'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 
 const props = defineProps<{
   modelValue: Trigger | undefined
@@ -54,19 +54,26 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue'])
 
 const activeTrigger = ref<Trigger | undefined>()
-const isInherited = ref<boolean>(activeTrigger.value === undefined)
+const isInherited = ref<boolean>()
 const type = computed(() => activeTrigger.value?.type ?? props.inherited.type)
 
 onMounted(() => {
   showHide(true)
 })
 
+watchEffect(() => {
+  if (isInherited.value) {
+    activeTrigger.value = { ...props.inherited }
+  } else {
+    activeTrigger.value = { ...props.modelValue ?? props.inherited }
+  }
+})
+
 function showHide(state: boolean) {
   if (state) {
-    activeTrigger.value = { ...(props.modelValue ?? props.inherited) }
     isInherited.value = props.modelValue === undefined
   } else {
-    emit('update:modelValue', activeTrigger.value)
+    emit('update:modelValue', isInherited.value ? undefined : activeTrigger.value)
   }
 }
 

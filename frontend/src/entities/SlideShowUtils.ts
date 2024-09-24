@@ -19,7 +19,16 @@ export function processSlideShowData(data: SlideShowData) : SlideShow {
     }
   }
 
-  const slideShow : SlideShow = { slides: [], totalSlides: 0 }
+  const slideShow : SlideShow = { slides: [] }
+  if (data.trigger) {
+    slideShow.trigger = data.trigger
+  }
+  if (data.groupTrigger) {
+    slideShow.groupTrigger = data.groupTrigger
+  }
+  if (data.groupSlideTrigger) {
+    slideShow.groupSlideTrigger = data.groupSlideTrigger
+  }
   for (let si = 0; si < data.slides.length; si++) {
     const slideData = data.slides[si]
     if (slideData.type === 'group') {

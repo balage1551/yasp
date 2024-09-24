@@ -8,8 +8,10 @@
             <v-col cols="4">
               <v-text-field variant="outlined" v-model="editorStore.path" :label="$t('editor.directory')"
                             prepend-inner-icon="mdi-folder" hide-details readonly>
-                <template #append>
-                  <v-btn color="primary" @click="scan">Scan</v-btn>
+                <template #append-inner>
+                  <v-btn color="primary" @click="scan">
+                    <v-icon>mdi-refresh</v-icon>
+                  </v-btn>
                 </template>
               </v-text-field>
             </v-col>
@@ -20,16 +22,27 @@
             </v-col>
             <v-col cols="3">
             </v-col>
-            <!--            <v-col cols="1" class="text-right" >-->
-            <!--              <v-btn class="mt-2" color="primary" @click="save">{{ $t('common.save' )}}</v-btn>-->
-            <!--            </v-col>-->
+                        <v-col cols="1" class="text-right" >
+                          <v-btn class="mt-2" color="primary" @click="save">{{ $t('common.save' )}}</v-btn>
+                        </v-col>
           </v-row>
         </v-container>
       </v-sheet>
-      <v-toolbar density="compact" class="reel-toolbar px-2 py-1" ref="reelToolbar">
-        <div class="info ml-2">
-          {{ $t('editor.info', {totalCount: slideShow.totalSlides, topSlides: slideShow.slides.length}) }}
-        </div>
+      <v-toolbar v-if="slideShowLoaded" density="compact" class="reel-toolbar px-2 py-1" ref="reelToolbar">
+        <v-col cols="2" class="mt-2">
+          {{ $t('editor.trigger') }}
+          <trigger-settings-popup v-model="slideShow.trigger" :inherited="DEFAULT_TRIGGER"></trigger-settings-popup>
+        </v-col>
+        <v-col cols="2" class="mt-2">
+          {{ $t('editor.groupTrigger') }}
+          <trigger-settings-popup v-model="slideShow.groupTrigger"
+                                  :inherited="DEFAULT_GROUP_TRIGGER"></trigger-settings-popup>
+        </v-col>
+        <v-col cols="3" class="mt-2">
+          {{ $t('editor.groupSlideTrigger') }}
+          <trigger-settings-popup v-model="slideShow.groupSlideTrigger"
+                                  :inherited="DEFAULT_GROUP_SLIDE_TRIGGER"></trigger-settings-popup>
+        </v-col>
         <v-spacer></v-spacer>
         <v-icon size="40"
                 class="cursor-grab"
@@ -109,7 +122,7 @@
                         <trigger-settings-popup v-model="(slide as GroupSlide).slideTrigger"
                                                 :inherited="slideShow.groupTrigger ?? DEFAULT_GROUP_TRIGGER"></trigger-settings-popup>
                       </v-col>
-                      <v-col cols="2" class="mt-2">
+                      <v-col cols="3" class="mt-2">
                         {{ $t('editor.groupSlideTrigger') }}
                         <trigger-settings-popup v-model="slide.trigger"
                                                 :inherited="slideShow.groupSlideTrigger ?? DEFAULT_GROUP_SLIDE_TRIGGER"></trigger-settings-popup>
@@ -140,7 +153,6 @@
                 <image-slide-box :slide="inGroupSlide"
                                  :isGroupSlide="true"
                                  :slide-show="slideShow"
-                                 :inGroupSlide-show="slideShow"
                                  :selected=" reelSelectedItems.includes(inGroupSlide)"
 
                                  @delete="deleteSlide(inGroupSlide)"
@@ -182,11 +194,12 @@
           </div>
 
         </v-list>
-        <div class="ma-2" style="display: none;">
-          <!--          DT: {{ dragType }} - BC: {{ blockDragCounter }} - SC: {{ slideDragCounter }} - TT: {{ dragTarget?.type }} - TBI:-->
-          <!--          {{ dragTarget?.block.index }} - -->
-        </div>
       </v-sheet>
+      <div v-if="slideShow" class="statusbar reel-statusbar" ref="reelStatusBar">
+        <v-icon>mdi-filmstrip-box</v-icon> {{ slideShow.slides.length }}
+        <v-icon class="ml-2">mdi-image</v-icon>  {{ totalSlides }}
+        <v-icon class="ml-2">mdi-basket</v-icon> {{ reelSelectedItems.length }}
+      </div>
 
       <v-toolbar density="compact" class="basket-toolbar px-2 py-1" ref="basketToolbar"
                  :style="'top:'+headerSize.height.value+'px' ">
@@ -215,6 +228,11 @@
           </v-list-item>
         </v-list>
       </v-sheet>
+      <div v-if="slideShow" class="statusbar basket-statusbar" ref="basketStatusBar">
+        <v-icon class="ml-2">mdi-image</v-icon>  {{ unusedItemsInBasket.length }}
+        <v-icon class="ml-2">mdi-basket</v-icon> {{ basketSelectedItems.length }}
+      </div>
+
     </v-container>
   </application-layout>
   <div style="position: absolute; left: -1000px; top:-1000px;">
@@ -255,6 +273,7 @@ import {
   BasketItem,
   DEFAULT_GROUP_SLIDE_TRIGGER,
   DEFAULT_GROUP_TRIGGER,
+  DEFAULT_TRIGGER,
   GroupSlide,
   ImageSlide,
   Slide,
@@ -264,27 +283,34 @@ import useEditorApi from '@/api/editorApi'
 import { useElementSize, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
-import { fullIndex, getAllImageSlides, nextUID } from '@/entities/SlideShowUtils'
+import { fullIndex, getAllImageSlides, nextUID, toData } from '@/entities/SlideShowUtils'
 import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
 import LabelEditorDialog from '@/dialogs/LabelEditorDialog.vue'
 import ImageSlideBox from '@/components/ImageSlideBox.vue'
 import TriggerSettingsPopup from '@/components/TriggerSettingsPopup.vue'
+import useSlideShowApi from '@/api/slideShowApi'
+import { useSnackbarStore } from '@/modules/snackbar/snackbarStore'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
 const editorStore = useEditorStore()
 const createConfirmDialog = useConfirmDialog()!
 
-const slideShow: Ref<SlideShow> = ref({ slides: [], totalSlides: 0 })
+const slideShowLoaded = ref(false)
+const slideShow: Ref<SlideShow> = ref({ slides: [] })
+const totalSlides = computed(() => slideShow.value.slides.flatMap((s) => s.type === 'group' ? s.slides.length : 1).reduce((sum, current) => sum + current, 0))
 const header = ref()
 const reelToolbar = ref()
+const reelStatusBar = ref()
+const basketStatusBar = ref()
 
 const headerSize = useElementSize(header)
 const reelToolbarSize = useElementSize(reelToolbar)
 const windowSize = useWindowSize()
+const statusBarSize = useElementSize(reelStatusBar)
 
 const boxHeight = computed(() => {
-  return 'height:' + (windowSize.height.value - headerSize.height.value - reelToolbarSize.height.value - 8) + 'px'
+  return 'height:' + (windowSize.height.value - headerSize.height.value - reelToolbarSize.height.value - statusBarSize.height.value - 14) + 'px'
 })
 
 const openedGroups = ref<number[]>([])
@@ -297,6 +323,7 @@ onMounted(async () => {
   slideShow.value = editorStore.slideShow!
   console.log('slideShow', slideShow.value)
   if (slideShow.value) {
+    slideShowLoaded.value = true
     openedGroups.value.slice(0, openedGroups.value.length)
     slideShow.value.slides.forEach((slide: Slide) => {
       if (slide.type === 'group') {
@@ -305,12 +332,18 @@ onMounted(async () => {
           if (slide.thumbnail === undefined) {
             resourceApi.requestThumbnail(slide.imageName).then((response) => {
               slide.thumbnail = URL.createObjectURL(response)
+            }).catch((error) => {
+              console.error('Error loading thumbnail', error)
+              slide.missing = true
             })
           }
         })
       } else {
         resourceApi.requestThumbnail(slide.imageName).then((response) => {
           slide.thumbnail = URL.createObjectURL(response)
+        }).catch((error) => {
+          console.error('Error loading thumbnail', error)
+          slide.missing = true
         })
       }
     })
@@ -514,13 +547,6 @@ function dragEnd(event: DragEvent) {
   dragHandler.value = undefined
 }
 
-function isDragTargetSelected(slide: Slide | undefined, group: GroupSlide | undefined) {
-  // console.log('isDragTargetSelected', slide?.index, group?.index, dragTarget.value?.nextSlide?.index, dragTarget.value?.group?.index, dragTarget.value?.invalid)
-  if (!dragTarget.value) return false
-  if (dragTarget.value.invalid === true) return false
-  return slide === dragTarget.value.nextSlide && group === dragTarget.value.group
-}
-
 function addToBasket(slide: Slide, select: boolean = false): ImageSlide[] {
   const slides: ImageSlide[] = (slide.type === 'group') ? slide.slides : [slide]
 
@@ -612,6 +638,7 @@ function dropBasketToReel(target: DragTargetInfo) {
       thumbnail: item.thumbnail,
       index: index++
     }
+    console.log('Add slide', slide)
     if (group) {
       slide.group = group
     }
@@ -873,13 +900,15 @@ function newGroupInsert(dragTarget: DragTargetInfo | undefined) {
   }
 }
 
-//
-// function save() {
-//   const data = toData(slideShow.value)
-//   useSlideShowApi().saveSlideShow(editorStore.path, editorStore.name, data).then((response) => {
-//     console.log('Save response', response)
-//   })
-// }
+function save() {
+  const data = toData(slideShow.value)
+  useSlideShowApi().saveSlideShow(editorStore.path, editorStore.name, editorStore.originalName, data).then((response) => {
+    console.log('Save response', response)
+  }).catch((error) => {
+    console.error('Error saving slide show', error.response.data.error)
+    useSnackbarStore().addError('@saveError.' + error.response.data.error)
+  })
+}
 
 const labelEditor = ref<typeof LabelEditorDialog>()
 const showLabelEditor = ref(false)
@@ -919,6 +948,18 @@ body {
   color: whitesmoke;
 }
 
+.statusbar {
+  background-color: #333333;
+  width: var(--split-size);
+  color: #aaaaaa;
+  height: 25px;
+  font-size: 80%;
+  text-align: left;
+  padding: 2px 10px;
+  position: absolute;
+  bottom: 0;
+}
+
 .reel {
   position: absolute;
   background-color: #333333;
@@ -949,6 +990,11 @@ body {
   border-left: 1px solid whitesmoke;
   width: calc(100% - var(--split-size));
   color: whitesmoke;
+  left: var(--split-size);
+}
+
+.basket-statusbar {
+  border-left: 1px solid whitesmoke;
   left: var(--split-size);
 }
 

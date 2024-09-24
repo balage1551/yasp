@@ -16,7 +16,7 @@
 <script setup lang="ts">
 
 import { VIcon, VProgressLinear } from 'vuetify/components'
-import { ImageSlide, Slide, SlideShow } from '@/entities/SlideShowTypes'
+import { ImageSlide, SlideShow } from '@/entities/SlideShowTypes'
 import { onMounted, ref } from 'vue'
 import CrossFader from '@/components/CrossFader.vue'
 import { SlideShowRunner, SlideShowState } from '@/entities/SlideShowRunner'
@@ -44,7 +44,7 @@ onMounted(() => {
     (state: SlideShowState) => {
       setOsdIcon(state)
     })
-  total.value = show.slideShow.totalSlides
+  total.value = show.slideShow.slides.length
   useEventListener(window, 'keydown', (event) => {
     if (event.key === 'i') {
       showInfo.value = !showInfo.value
