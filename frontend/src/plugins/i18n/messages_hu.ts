@@ -135,5 +135,6 @@ export const messagesHU = merge({}, messagesCommon, {
   },
   saveError: {
     alreadyExists: 'Mentés sikertelen: Már létezik ilyen nevű diavetítés',
-  }
+  },
+  saveSuccess: 'Diavetítés sikeresen mentve'
 })

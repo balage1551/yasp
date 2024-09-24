@@ -6,7 +6,7 @@
         <v-card v-if="!play" class="slide-show-info">
           <v-card-title class="slide-show-info-title">
             {{ $t('slideShowInfo.title') }}
-            <v-btn v-if="editable" @click="play = true" color="gray" class="float-end" variant="flat">{{
+            <v-btn v-if="editable" @click="createNew" color="gray" class="float-end" variant="flat">{{
                 $t('slideShowInfo.new')
               }}
             </v-btn>
@@ -59,10 +59,13 @@ onMounted(() => {
     useEditorStore().enabled = response.editable
     editable.value = response.editable
     slideShowList.value = response.slideShows
-    // slideShow.value = processSlideShowData(response)
-    // play.value = true
   })
 })
+
+function createNew() {
+  useEditorStore().createNewSlideShow(path.value)
+  router.push({ name: 'Editor' })
+}
 
 function startPlay(ss: SlideShowListItem) {
   useSlideShowApi().requestSlideShow(path.value, ss.name).then((response) => {

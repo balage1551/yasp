@@ -318,7 +318,8 @@ const openedGroups = ref<number[]>([])
 onMounted(async () => {
   console.log('editorStore', editorStore.slideShow)
   if (editorStore.slideShow == null) {
-    await editorStore.setCurrentSlideShow('gallery/iceland', 'marci')
+    await editorStore.reloadSlideShow()
+    // await editorStore.setCurrentSlideShow('gallery/iceland', 'marci')
   }
   slideShow.value = editorStore.slideShow!
   console.log('slideShow', slideShow.value)
@@ -904,6 +905,7 @@ function save() {
   const data = toData(slideShow.value)
   useSlideShowApi().saveSlideShow(editorStore.path, editorStore.name, editorStore.originalName, data).then((response) => {
     console.log('Save response', response)
+    useSnackbarStore().addSuccess('@saveSuccess')
   }).catch((error) => {
     console.error('Error saving slide show', error.response.data.error)
     useSnackbarStore().addError('@saveError.' + error.response.data.error)
