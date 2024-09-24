@@ -61,29 +61,25 @@ export class SlideShowRunner {
           this.setState(SlideShowState.PLAYING)
           this.showNext()
         }
+      } else if (this.state === SlideShowState.MANUAL_HOLD && event.code === 'Space') {
+        this.setState(SlideShowState.PLAYING)
+        this.showNext()
       } else if (this.state === SlideShowState.PLAYING && this.currentSlide.value?.type === 'group') {
         const trigger = this.getGroupTrigger(this.currentSlide.value)
         if (trigger.type === 'key' && trigger.keys?.includes(event.code.toLowerCase())) {
           this.showNext('force')
         }
       }
-      if (event.code === 'P' || event.code === 'Pause') {
-        // switch (this.state) {
-        //   case SlideShowState.PLAYING:
-        //     this.setState(SlideShowState.HOLD_ON_SLIDE)
-        //     break
-        //   case SlideShowState.HOLD_ON_BLOCK_END:
-        //     this.nextBlock()
-        //     break
-        //   case SlideShowState.HOLD_ON_SLIDE:
-        //     this.setState(SlideShowState.PLAYING)
-        //     this.showNext()
-        //     break
-        //   case SlideShowState.MANUAL_HOLD:
-        //     this.setState(SlideShowState.PLAYING)
-        //     this.showNext()
-        //     break
-        // }
+      if (event.code === 'KeyP' || event.code === 'Pause') {
+        switch (this.state) {
+          case SlideShowState.PLAYING:
+            this.setState(SlideShowState.MANUAL_HOLD)
+            break
+          case SlideShowState.MANUAL_HOLD:
+            this.setState(SlideShowState.PLAYING)
+            this.showNext()
+            break
+        }
       } else if (event.code === 'ArrowRight' && this.state !== SlideShowState.FINISHED) {
         this.setState(SlideShowState.MANUAL_HOLD)
         this.showNext('at-end')
