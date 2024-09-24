@@ -46,12 +46,11 @@
 
             <!-- Pre main slide marker -->
             <div class="drag-marker"
-                 :class="{ 'drag-marker-visible' : isDragTargetSelected( slide, undefined ) }"
+                 :id="'undefined.'+slide.uid"
                  @dragenter="handleSlideDragEnter($event, slide, true)"
                  @dragleave="handleSlideDragLeave($event, true)"
                  @drop="drop($event, dragTarget)"
                  @dragover.prevent>
-
             </div>
 
             <!-- Main slide -->
@@ -130,7 +129,7 @@
 
                 <!-- Group slide item pre marker -->
                 <div class="drag-marker"
-                     :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( inGroupSlide, slide as GroupSlide) }"
+                     :id="slide.uid+'.'+inGroupSlide.uid"
                      @dragenter="handleSlideDragEnter($event, inGroupSlide, true)"
                      @dragleave="handleSlideDragLeave($event, true)"
                      @drop="drop($event, dragTarget)"
@@ -163,7 +162,7 @@
 
               <!-- Group slide item post marker -->
               <div class="drag-marker"
-                   :class="{ 'drag-marker-in-group-visible' : isDragTargetSelected( undefined, slide as GroupSlide) }"
+                   :id="slide.uid+'.undefined'"
                    @dragenter="handleSlideDragEnter($event, undefined, true)"
                    @dragleave="handleSlideDragLeave($event, true)"
                    @drop="drop($event, dragTarget)"
@@ -173,138 +172,15 @@
             </v-list-group>
           </template>
 
+          <!-- Post main slide marker -->
           <div class="drag-marker"
-               :class="{ 'drag-marker-visible' : isDragTargetSelected( undefined, undefined) }"
+               id="undefined.undefined"
                @dragenter="handleSlideDragEnter($event, undefined, true)"
-               @dragleave="handleSlideDragLeave($event,  true)"
+               @dragleave="handleSlideDragLeave($event, true)"
                @drop="drop($event, dragTarget)"
                @dragover.prevent>
           </div>
-          <!--            :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"-->
-          <!--            @dragenter="handleSlideDragEnter($event, block, slide, true)"-->
-          <!--            @dragleave="handleSlideDragLeave($event,  true)"-->
-          <!--            @drop="drop($event, dragTarget)"-->
 
-          <!--            <v-list-group v-for="block in slideShow.blocks" :key="block.uid"-->
-          <!--                          ref="reelBlocks"-->
-          <!--                          :value="block.uid"-->
-          <!--                          @dragenter="handleBlockDragEnter($event, block)"-->
-          <!--                          @dragleave="handleBlockDragLeave($event, block)"-->
-          <!--                          @drop="drop($event, dragTarget)"-->
-          <!--                          @dragover.prevent>-->
-          <!--              <template v-slot:activator="{props}">-->
-          <!--                <v-list-item-->
-          <!--                  v-bind="props"-->
-          <!--                >-->
-          <!--                  <v-container @click.stop="">-->
-          <!--                    <v-row>-->
-          <!--                      <v-col cols="6">-->
-          <!--                        <v-text-field v-model="block.name" :label="$t('editor.block.name')" hide-details density="compact"-->
-          <!--                                      variant="outlined">-->
-          <!--                          <template #prepend>-->
-          <!--                            <div class="block-index">-->
-          <!--                              {{ block.index }} - {{ block.uid }}-->
-          <!--                            </div>-->
-          <!--                          </template>-->
-          <!--                        </v-text-field>-->
-          <!--                      </v-col>-->
-          <!--                      <v-col cols="1">-->
-          <!--                        <v-menu :id="'atTheEndMenu-'+block.uid" location="bottom" @click.stop="">-->
-          <!--                          <template v-slot:activator="{ props }">-->
-          <!--                            <v-icon v-if="block.atTheEnd?.type === 'hold'" size="32" class="mt-1" v-bind="props">-->
-          <!--                              mdi-mouse-->
-          <!--                            </v-icon>-->
-          <!--                            <v-icon v-else-if="block.atTheEnd?.type === 'loop'" class="mt-1" size="32" v-bind="props">-->
-          <!--                              mdi-repeat-variant-->
-          <!--                            </v-icon>-->
-          <!--                            <v-icon v-else size="32" class="mt-1" v-bind="props">mdi-arrow-right-thick</v-icon>-->
-          <!--                          </template>-->
-          <!--                          <v-list>-->
-          <!--                            <v-list-item prepend-icon="mdi-arrow-right-thick" @click="setAtTheEnd(block, 'continue')">-->
-          <!--                              <v-list-item-title>{{ $t('editor.atTheEnd.continue') }}</v-list-item-title>-->
-          <!--                            </v-list-item>-->
-          <!--                            <v-list-item prepend-icon="mdi-mouse" @click="setAtTheEnd(block, 'hold')">-->
-          <!--                              <v-list-item-title>{{ $t('editor.atTheEnd.hold') }}</v-list-item-title>-->
-          <!--                            </v-list-item>-->
-          <!--                            <v-list-item prepend-icon="mdi-repeat-variant" @click="setAtTheEnd(block, 'loop')">-->
-          <!--                              <v-list-item-title>{{ $t('editor.atTheEnd.loop') }}</v-list-item-title>-->
-          <!--                            </v-list-item>-->
-          <!--                          </v-list>-->
-          <!--                        </v-menu>-->
-          <!--                      </v-col>-->
-          <!--                      <v-col cols="5" class="text-right">-->
-          <!--                        <v-icon :disabled="block.index === 1" size="32" @click="mergeUp(block)">mdi-arrow-expand-up-->
-          <!--                        </v-icon>-->
-          <!--                      </v-col>-->
-          <!--                    </v-row>-->
-          <!--                  </v-container>-->
-          <!--                </v-list-item>-->
-          <!--              </template>-->
-
-          <!--              <template v-for="slide in block.slides" :key="slide.absoluteIndex">-->
-          <!--                <div class="drag-marker"-->
-          <!--                     :class="{ 'drag-marker-visible' : isDragTargetSelected( block, slide) }"-->
-          <!--                     @dragenter="handleSlideDragEnter($event, block, slide, true)"-->
-          <!--                     @dragleave="handleSlideDragLeave($event,  true)"-->
-          <!--                     @drop="drop($event, dragTarget)"-->
-          <!--                     @dragover.prevent>-->
-
-          <!--                </div>-->
-
-          <!--                <v-list-item class="slide-box" :class="{ 'selected': reelSelectedItems.includes(slide) }"-->
-          <!--                             :draggable="true"-->
-          <!--                             @dragstart="reelDragStart($event, slide)"-->
-          <!--                             @dragend="dragEnd"-->
-          <!--                             @dragenter="handleSlideDragEnter($event, block, slide)"-->
-          <!--                             @dragleave="handleSlideDragLeave($event)"-->
-          <!--                             @drop="drop($event, dragTarget)"-->
-          <!--                             @dragover.prevent-->
-          <!--                             @click="reelSelectItem($event, slide)">-->
-          <!--                  <template #prepend>-->
-          <!--                    <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"-->
-          <!--                           :src="slide.thumbnail" aspect-ratio="1"></v-img>-->
-          <!--                    <v-icon class="missing" size="60" v-if="slide.missing === true" color="red">mdi-alert</v-icon>-->
-          <!--                  </template>-->
-          <!--                  <template #append>-->
-          <!--                    <v-icon size="40" @click="splitBlock(block, slide)">mdi-arrow-split-horizontal</v-icon>-->
-          <!--                    <div style="width: 10px"></div>-->
-          <!--                    <v-icon size="40" @click="deleteSlide(slide)">mdi-delete</v-icon>-->
-
-          <!--                  </template>-->
-          <!--                  <v-list-item-title class="font-weight-bold mb-2">-->
-          <!--                    {{ slide.inBlockIndex }} - {{ slide.imageName }}-->
-          <!--                  </v-list-item-title>-->
-          <!--                  <v-list-item-subtitle>-->
-          <!--                    <v-icon @click="editLabel(slide)" :style="'color:'+ (slide.label ? 'white' : 'gray')">mdi-tag</v-icon>-->
-          <!--                    <v-menu :id="'trigger-'+slide.imageName" location="bottom" @click.stop="">-->
-          <!--                      <template v-slot:activator="{ props }">-->
-          <!--                        <v-icon v-bind="props" v-if="!slide.trigger || slide.trigger.type === 'timed'">mdi-timer</v-icon>-->
-          <!--                        <v-icon v-bind="props" v-else-if="slide.trigger.type === 'key' && slide.trigger.onlyOnce !== true">mdi-keyboard</v-icon>-->
-          <!--                        <v-icon v-bind="props" v-else>mdi-keyboard-outline</v-icon>-->
-          <!--                      </template>-->
-          <!--                      <v-list>-->
-          <!--                        <v-list-item prepend-icon="mdi-timer" @click="setTransition(slide, 'continue')">-->
-          <!--                          <v-list-item-title>{{ $t('editor.transition.continue') }}</v-list-item-title>-->
-          <!--                        </v-list-item>-->
-          <!--                        <v-list-item prepend-icon="mdi-keyboard" @click="setTransition(slide, 'hold')">-->
-          <!--                          <v-list-item-title>{{ $t('editor.transition.hold') }}</v-list-item-title>-->
-          <!--                        </v-list-item>-->
-          <!--                        <v-list-item prepend-icon="mdi-keyboard-outline" @click="setTransition(slide, 'holdOnce')">-->
-          <!--                          <v-list-item-title>{{ $t('editor.transition.holdOnce') }}</v-list-item-title>-->
-          <!--                        </v-list-item>-->
-          <!--                      </v-list>-->
-          <!--                    </v-menu>-->
-          <!--                  </v-list-item-subtitle>-->
-          <!--                </v-list-item>-->
-          <!--              </template>-->
-          <!--              <div class="drag-marker" :class="{ 'drag-marker-visible' : isDragTargetSelected( block, undefined) }"-->
-          <!--                   @dragenter="handleSlideDragEnter($event, block, undefined, true)"-->
-          <!--                   @dragleave="handleSlideDragLeave($event, true)"-->
-          <!--                   @drop="drop($event, dragTarget)"-->
-          <!--                   @dragover.prevent>-->
-          <!--              </div>-->
-
-          <!--            </v-list-group>-->
         </v-list>
         <div class="ma-2" style="display: none;">
           <!--          DT: {{ dragType }} - BC: {{ blockDragCounter }} - SC: {{ slideDragCounter }} - TT: {{ dragTarget?.type }} - TBI:-->
@@ -327,12 +203,6 @@
                        :draggable="true"
                        @dragstart="basketDragStart($event, image)"
                        @dragend="dragEnd">
-            <!--                        <v-list-item v-for="image in unusedItemsInBasket" :key="image.imageName"-->
-            <!--                         class="my-1 slide-box" :class="{ 'selected': basketSelectedItems.includes(image) }"-->
-            <!--                         @click="basketSelectItem($event, image)"-->
-            <!--                         :draggable="true"-->
-            <!--                         @dragstart="basketDragStart($event, image)"-->
-            <!--                         @dragend="dragEnd">-->
             <template #prepend>
               <v-img class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
                      :src="image.thumbnail" aspect-ratio="1"></v-img>
@@ -533,8 +403,24 @@ const dragTarget = ref<undefined | DragTargetInfo>()
 const blockDragCounter = ref(0)
 const slideDragCounter = ref(0)
 
+function setDragTarget(target: DragTargetInfo | undefined) {
+  function setMarkerColor(c: string) {
+    const key = dragTarget.value?.group?.uid + '.' + dragTarget?.value?.nextSlide?.uid
+    const element = document.getElementById(key)
+    if (element) {
+      element.style.backgroundColor = c
+    }
+  }
+
+  setMarkerColor('')
+  dragTarget.value = target
+  if (target) {
+    setMarkerColor(target.invalid ? '' : (target.group ? '#139ff7' : '#f7b613'))
+  }
+}
+
 function clearDragTarget() {
-  dragTarget.value = undefined
+  setDragTarget(undefined)
 }
 
 function handleSlideDragEnter(event: DragEvent, slide: Slide | undefined, isMarker: boolean = false) {
@@ -579,7 +465,7 @@ function handleSlideDragEnter(event: DragEvent, slide: Slide | undefined, isMark
     return
   }
   // console.log('Drag target', newTarget.nextSlide?.index, inGroup)
-  dragTarget.value = newTarget
+  setDragTarget(newTarget)
 }
 
 function handleSlideDragLeave(event: DragEvent, isMarker: boolean = false) {
