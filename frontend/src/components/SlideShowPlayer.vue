@@ -28,6 +28,9 @@
         <div class="float-start kbc-button mr-5">Space</div> <span> Megállított vetítés újraindítása</span>
       </div>
       <div class="center">
+        <div class="float-start kbc-button mr-5">Esc</div> <span> Megszakítja a vetítést (kétszer, gyorsan lenyomva)</span>
+      </div>
+      <div class="center">
         <div class="float-start kbc-button mr-5">I</div> <span> Dia információk megjelenítése és elrejtése</span>
       </div>
       <div class="center">
@@ -62,6 +65,7 @@ const currentSlide = ref<ImageSlide | undefined>()
 const showInfo = ref(false)
 const showHelp = ref(false)
 const slideShowRunner = shallowRef<SlideShowRunner>()
+const escapePressed = ref(false)
 
 onMounted(() => {
   const show = new SlideShowRunner(props.slideShow,
@@ -78,6 +82,17 @@ onMounted(() => {
       showInfo.value = !showInfo.value
     } else if (event.key === 'F1') {
       showHelp.value = !showHelp.value
+      event.preventDefault()
+    } else if (event.key === 'Escape') {
+      if (escapePressed.value) {
+        show.stop()
+        emit('finished')
+      } else {
+        escapePressed.value = true
+        setTimeout(() => {
+          escapePressed.value = false
+        }, 1000)
+      }
       event.preventDefault()
     }
   })

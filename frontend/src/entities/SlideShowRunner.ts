@@ -46,6 +46,14 @@ export class SlideShowRunner {
     useEventListener(window, 'keydown', (event) => this.handleKey(event.code))
   }
 
+  stop() {
+    if (this.countdown !== null) {
+      clearTimeout(this.countdown)
+    }
+    this.countdown = null
+    this.setState(SlideShowState.FINISHED)
+  }
+
   handleKey(code: string) {
     if (this.state === SlideShowState.HOLD_ON_SLIDE && this.currentImageSlide) {
       const trigger = this.getTrigger(this.currentImageSlide)

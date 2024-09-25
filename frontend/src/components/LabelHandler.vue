@@ -52,8 +52,8 @@ const imageSize = useElementSize(props.image)
 const naturalSize = computed(() => {
   const img = imageTag.value
   return {
-    width: img?.naturalWidth,
-    height: img?.naturalHeight
+    width: img?.naturalWidth ?? 1,
+    height: img?.naturalHeight ?? 1
   }
 })
 const scaleLevel = computed(() => {
@@ -66,7 +66,7 @@ const currentSize = computed(() => {
   }
 })
 const imageOrigin = computed(() => {
-  console.log('imageSize: ', imageSize.value, ' naturalSize: ', naturalSize.value, ' scaleLevel: ', scaleLevel.value, outlineStyle.value)
+  // console.log('imageSize: ', imageSize.value, ' naturalSize: ', naturalSize.value, ' scaleLevel: ', scaleLevel.value, outlineStyle.value)
   return {
     x: (imageSize.width.value - naturalSize.value.width * scaleLevel.value) / 2,
     y: (imageSize.height.value - naturalSize.value.height * scaleLevel.value) / 2

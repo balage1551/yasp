@@ -919,7 +919,7 @@ function editLabel(slide: Slide) {
   console.log('Edit label', slide, labelEditor.value)
   showLabelEditor.value = true
   nextTick(() => {
-    labelEditor.value?.open(slide)
+    labelEditor.value?.open(slide, slideShow.value)
   })
 }
 

@@ -41,13 +41,16 @@ class ResourceController : BaseController() {
 
     @PostMapping("/thumbnail")
     fun getThumbnail(@RequestBody @Validated request: ImageRequestDTO): ResponseEntity<ByteArray> {
-        val key = "${arguments.path}/${request.fileName}"
+        val requestedWidth = request.width ?: 120
+        val requestedHeight = request.height ?: 80
+        val filePath = "${arguments.path}/${request.fileName}"
+        val key = "${filePath}@${requestedWidth}x${requestedHeight}"
         log.info("Requesting thumbnail: $key")
         if (!thumbnailCache.containsKey(key)) {
-            val imgFile: Path = Path.of(key)
+            val imgFile: Path = Path.of(filePath)
             val originalImage: BufferedImage = ImageIO.read(Files.newInputStream(imgFile))
 
-            val (width, height) = calculateThumbnailSize(originalImage.width, originalImage.height, 120, 80)
+            val (width, height) = calculateThumbnailSize(originalImage.width, originalImage.height, requestedWidth, requestedHeight)
             val resizedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
             val graphics = resizedImage.createGraphics()
             graphics.drawImage(originalImage, 0, 0, width, height, null)
