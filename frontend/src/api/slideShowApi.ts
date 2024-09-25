@@ -35,6 +35,17 @@ function requestSlideShow(path: string, name: string): Promise<SlideShowData> {
   })
 }
 
+function deleteSlideShow(path: string, name: string): Promise<string> {
+  return request({
+    url: '/slide-show/delete',
+    method: 'post',
+    data: {
+      path,
+      name
+    }
+  })
+}
+
 function saveSlideShow(path: string, name: string, originalName: string, data: SlideShowData): Promise<SaveResponse> {
   return request({
     url: '/slide-show/save',
@@ -51,7 +62,8 @@ function saveSlideShow(path: string, name: string, originalName: string, data: S
 const slideShowApiInstance = {
   requestSlideShow,
   listSlideShows,
-  saveSlideShow
+  saveSlideShow,
+  deleteSlideShow
 }
 
 export default function useSlideShowApi() {

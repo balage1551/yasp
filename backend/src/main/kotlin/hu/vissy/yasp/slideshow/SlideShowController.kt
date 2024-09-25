@@ -71,4 +71,19 @@ class SlideShowController : BaseController() {
 
         return ResponseEntity(jsonObject { "success" += true }.toString(), HttpStatus.OK)
     }
+
+
+
+    @PostMapping("/delete")
+    fun save(@RequestBody @Validated request: SlideShowDeleteDTO): ResponseEntity<String> {
+        if (arguments.editorDisabled) {
+            return ResponseEntity(jsonObject { "error" += "saveNotAllowed" }.toString(), HttpStatus.FORBIDDEN)
+        }
+        log.info("Deleting slideShow: ${request.path} ${request.name}")
+        val slideShowDefinitionFile: Path = Path.of("${request.path}/${request.name}.yasp.json")
+        if (Files.exists(slideShowDefinitionFile)) {
+            Files.delete(slideShowDefinitionFile)
+        }
+        return ResponseEntity("ok", HttpStatus.OK)
+    }
 }

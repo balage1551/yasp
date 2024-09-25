@@ -107,10 +107,18 @@ export const messagesHU = merge({}, messagesCommon, {
     groupSlideTrigger: 'Dia egy csoportban:',
     groupTrigger: 'Csoport:'
   },
+  dashboard: {
+    deleteSlideShow: {
+      title: 'Diavetítés törlése',
+      message: 'Biztosan törli a "{name}" diavetítést?',
+      success: 'Diavetítés sikeresen törölve'
+    },
+  },
   slideShowInfo: {
     title: 'A rendelkezésre álló diavetítések',
     new: 'Új diavetítés',
     edit: 'Diavetítés szerkesztése',
+    delete: 'Diavetítés törlése',
     details: {
       numberOfSlides: 'Diák száma',
       numberOfBlocks: 'Blokkok száma'

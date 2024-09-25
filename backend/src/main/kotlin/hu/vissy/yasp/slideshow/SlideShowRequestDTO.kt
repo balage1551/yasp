@@ -18,6 +18,11 @@ data class SlideShowRequestDTO (
     val name: String
 )
 
+data class SlideShowDeleteDTO (
+    val path: String,
+    val name: String
+)
+
 
 data class SlideShowSaveRequestDTO (
     val path: String,

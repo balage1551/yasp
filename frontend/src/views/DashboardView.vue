@@ -13,13 +13,17 @@
           </v-card-title>
           <v-card-text class="slide-show-info-details" v-if="(slideShowList?.length ?? 0) > 0">
             <table>
-              <tr v-for="ss in slideShowList" :key="ss.name">
+              <tr v-for="ss in slideShowList"  class="row" :key="ss.name">
                 <td class="info-label">{{ ss.name }}</td>
                 <td class="info-value">
-                  <v-btn @click="startPlay(ss)" color="primary" variant="flat">{{ $t('slideShowInfo.play') }}</v-btn>
-                  <v-btn v-if="editable" @click="startEditor(ss)" color="green" variant="flat" class="ml-5">{{
-                      $t('slideShowInfo.edit')
-                    }}
+                  <v-btn @click="startPlay(ss)" color="primary" variant="flat">
+                    <v-icon>mdi-play</v-icon>
+                  </v-btn>
+                  <v-btn v-if="editable" @click="startEditor(ss)" color="green" variant="flat" class="ml-5">
+                    <v-icon>mdi-movie-edit</v-icon>
+                  </v-btn>
+                  <v-btn v-if="editable" @click="deleteSlideShow(ss)" color="red" variant="flat" class="ml-5">
+                    <v-icon>mdi-trash-can</v-icon>
                   </v-btn>
                 </td>
               </tr>
@@ -35,7 +39,7 @@
 </template>
 <script setup lang="ts">
 
-import { VBtn, VCard, VCardText, VCardTitle, VContainer } from 'vuetify/components'
+import { VBtn, VCard, VCardText, VCardTitle, VContainer, VIcon } from 'vuetify/components'
 import { onMounted, ref, shallowRef, ShallowRef } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
 import { SlideShow } from '@/entities/SlideShowTypes'
@@ -44,6 +48,12 @@ import useSlideShowApi, { SlideShowListItem } from '@/api/slideShowApi'
 import { processSlideShowData } from '@/entities/SlideShowUtils'
 import { useEditorStore } from '@/stores/editorStore'
 import { useRouter } from 'vue-router'
+import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
+import { useI18n } from 'vue-i18n'
+import { useSnackbarStore } from '@/modules/snackbar/snackbarStore'
+
+const createConfirmDialog = useConfirmDialog()!
+const i18n = useI18n()
 
 const slideShow: ShallowRef<undefined | SlideShow> = shallowRef()
 const play = ref(false)
@@ -53,6 +63,10 @@ const editable = ref<boolean>(false)
 const slideShowList = ref<SlideShowListItem[]>([])
 
 onMounted(() => {
+  refresh()
+})
+
+function refresh() {
   useSlideShowApi().listSlideShows().then((response) => {
     console.log('response', response)
     path.value = response.path
@@ -60,7 +74,7 @@ onMounted(() => {
     editable.value = response.editable
     slideShowList.value = response.slideShows
   })
-})
+}
 
 function createNew() {
   useEditorStore().createNewSlideShow(path.value)
@@ -80,6 +94,27 @@ function startEditor(ss: SlideShowListItem) {
   useEditorStore().setCurrentSlideShow(path.value, ss.name).then(() => {
     router.push({ name: 'Editor' })
   })
+}
+
+function deleteSlideShow(ss: SlideShowListItem) {
+  createConfirmDialog({
+    title: '@dashboard.deleteSlideShow.title',
+    titleColor: 'red',
+    content: i18n.t('dashboard.deleteSlideShow.message', { name: ss.name }),
+    buttons: ButtonSet.yesNo
+  }).then((button) => {
+    if (button === Button.YES) {
+      useSlideShowApi().deleteSlideShow(path.value, ss.name).then(() => {
+        useSnackbarStore().addSuccess('dashboard.deleteSlideShow.success')
+        refresh()
+      })
+    }
+  })
+  // useSlideShowApi().deleteSlideShow(path.value, ss.name).then(() => {
+  //   useSlideShowApi().listSlideShows().then((response) => {
+  //     slideShowList.value = response.slideShows
+  //   })
+  // })
 }
 
 </script>
@@ -105,6 +140,10 @@ function startEditor(ss: SlideShowListItem) {
   text-align: left;
   font-weight: bold;
   padding: 2px 10px 2px 5px;
+}
+
+.row {
+  margin-bottom: 5px;
 }
 
 </style>
