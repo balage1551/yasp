@@ -1,36 +1,36 @@
 <template>
   <div class="stack" :class="{ 'fade-in': visible, 'fade-out': !visible }" v-bind="props">
-    <v-img ref="imageTag" v-if="slideInfo" :src="image" alt="slideInfo.imageName" class="image" @load="imageLoaded = true"></v-img>
-    <label-handler v-if="label && imageLoaded" :image="imageTag" :label="label"></label-handler>
-<!--    <div class="title" v-if="slideInfo?.label">-->
-<!--      <div :style="labelStyle">{{slideInfo.label.text}}</div>-->
-<!--    </div>-->
+    <template v-if="slideInfo && slideInfo?.label">
+      <labeled-image-renderer :slide="slideInfo" :width="windowSize.width.value" :height="windowSize.height.value"></labeled-image-renderer>
+    </template>
+    <template v-else>
+      <v-img ref="imageTag" v-if="slideInfo" :src="image" alt="slideInfo.imageName" class="image" @load="imageLoaded = true"></v-img>
+    </template>
   </div>
 </template>
 <script setup lang="ts">
 
 import { VImg } from 'vuetify/components'
-import { type LabelInfo, Slide } from '@/entities/SlideShowTypes'
-import { computed, nextTick, ref, watchEffect } from 'vue'
+import { ImageSlide, type LabelInfo } from '@/entities/SlideShowTypes'
+import { nextTick, ref, watchEffect } from 'vue'
 import useResourceApi from '@/api/resourceApi'
-import { useSlideStore } from '@/stores/slideStore'
-import { labelStyles } from '@/entities/SlideShowUtils'
-import LabelHandler from '@/components/LabelHandler.vue'
+import LabeledImageRenderer from '@/components/LabeledImageRenderer.vue'
+import { useWindowSize } from '@vueuse/core'
 
 const props = withDefaults(defineProps<{
-  slideInfo: Slide | undefined
+  slideInfo: ImageSlide | undefined
   visible?: boolean
 }>(), {
   visible: true
 })
 
 const resourceApi = useResourceApi()
-const slideStore = useSlideStore()
 
 const image = ref()
 const imageTag = ref<VImg>()
 const imageLoaded = ref(false)
 const label = ref<LabelInfo|undefined>(undefined)
+const windowSize = useWindowSize()
 
 const emit = defineEmits<{(e: 'image-loaded'): void
 }>()
@@ -47,10 +47,6 @@ watchEffect(async () => {
       emit('image-loaded')
     })
   }
-})
-
-const labelStyle = computed(() => {
-  return labelStyles(label.value, slideStore.labelDefaults)
 })
 
 </script>

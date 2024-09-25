@@ -119,12 +119,12 @@
                       </v-col>
                       <v-col cols="2" class="mt-2">
                         {{ $t('editor.groupTrigger') }}
-                        <trigger-settings-popup v-model="(slide as GroupSlide).slideTrigger"
+                        <trigger-settings-popup v-model="(slide as GroupSlide).trigger"
                                                 :inherited="slideShow.groupTrigger ?? DEFAULT_GROUP_TRIGGER"></trigger-settings-popup>
                       </v-col>
                       <v-col cols="3" class="mt-2">
                         {{ $t('editor.groupSlideTrigger') }}
-                        <trigger-settings-popup v-model="slide.trigger"
+                        <trigger-settings-popup v-model="(slide as GroupSlide).slideTrigger"
                                                 :inherited="slideShow.groupSlideTrigger ?? DEFAULT_GROUP_SLIDE_TRIGGER"></trigger-settings-popup>
                       </v-col>
                     </v-row>

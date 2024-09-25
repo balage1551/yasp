@@ -264,6 +264,7 @@ function patternDropped(event: DragEvent) {
     if (!event.ctrlKey) {
       label.value.text = currentText
     }
+    isOutlined.value = label.value.outlined !== undefined
   }
 }
 

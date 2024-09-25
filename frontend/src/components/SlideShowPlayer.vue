@@ -1,7 +1,6 @@
 <template>
   <div class="container" style="position: relative;">
     <cross-fader ref="crossFader"></cross-fader>
-<!--    <v-icon v-if="state === SlideShowState.HOLD_ON_BLOCK_END" class="icon paused-block-end" size="50">mdi-pause</v-icon>-->
     <v-icon v-if="state === SlideShowState.HOLD_ON_SLIDE" class="icon paused-slide" size="50">mdi-mouse</v-icon>
     <v-icon v-if="state === SlideShowState.MANUAL_HOLD" class="icon paused-manual" size="50">mdi-pause</v-icon>
     <v-icon v-if="state === SlideShowState.FINISHED" class="icon finished" size="50">mdi-square</v-icon>

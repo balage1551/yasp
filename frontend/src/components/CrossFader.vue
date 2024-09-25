@@ -8,24 +8,18 @@
 </template>
 <script setup lang="ts">
 
-import { Slide } from '@/entities/SlideShowTypes'
+import { ImageSlide } from '@/entities/SlideShowTypes'
 import { Ref, ref } from 'vue'
 import ImageHolder from '@/components/ImageHolder.vue'
 
-const props = withDefaults(defineProps<{
-  dummy?: boolean
-}>(), {
-  dummy: true
-})
-
 const flipFlop = ref(true)
 
-const slideInfo1 = ref<Slide | undefined>()
-const slideInfo2 = ref<Slide | undefined>()
+const slideInfo1 = ref<ImageSlide | undefined>()
+const slideInfo2 = ref<ImageSlide | undefined>()
 
 const pendingSwap = ref(false)
 
-function setNext(info: Slide | undefined, flipImmediately: boolean = true) {
+function setNext(info: ImageSlide | undefined, flipImmediately: boolean = true) {
   if (flipFlop.value) {
     setImageInfo(slideInfo2, info, flipImmediately)
   } else {
@@ -33,7 +27,7 @@ function setNext(info: Slide | undefined, flipImmediately: boolean = true) {
   }
 }
 
-function setImageInfo(slideInfo: Ref<Slide | undefined>, info: Slide | undefined, flipImmediately: boolean) {
+function setImageInfo(slideInfo: Ref<ImageSlide | undefined>, info: ImageSlide | undefined, flipImmediately: boolean) {
   if (flipImmediately) {
     pendingSwap.value = true
   }
