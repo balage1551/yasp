@@ -10,7 +10,6 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.boot.context.event.ApplicationReadyEvent
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.MessageSource
@@ -24,8 +23,6 @@ import java.net.URI
 
 @SpringBootApplication(scanBasePackageClasses = [BasePackageMarkerClass::class]) // FileStorePackageMarkerClass::class ])
 @EnableConfigurationProperties(RsaKeyConfigProperties::class)
-//@EnableScheduling
-@ConfigurationPropertiesScan
 class YaspApplication : SpringBootServletInitializer() {
     override fun configure(application: SpringApplicationBuilder): SpringApplicationBuilder {
         return application.sources(YaspApplication::class.java)
