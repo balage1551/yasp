@@ -1,0 +1,20 @@
+spring:
+
+  ssl:
+    bundle:
+      jks:
+        server:
+          key:
+            alias: ${keyAlias}
+          keystore:
+            location: ${keyStoreLocation}
+            password: ${keyStorePassword}
+            type: ${keyStoreType}
+
+server:
+  ssl:
+    bundle: "server"
+    enabled-protocols: TLSv1.3
+
+application:
+  allowed-origins: https://localhost:9811,https://localhost:9810

@@ -1,0 +1,21 @@
+spring:
+
+  ssl:
+    bundle:
+      jks:
+        server:
+          key:
+            alias: ${keyAlias}
+          keystore:
+            location: ${keyStoreLocation}
+            password: ${keyStorePassword}
+            type: ${keyStoreType}
+
+server:
+  ssl:
+    bundle: "server"
+    enabled-protocols: TLSv1.3
+
+application:
+  allowed-origins: https://balage-srv.ddns.net:9810
+

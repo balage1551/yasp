@@ -2,18 +2,6 @@ spring:
   application:
     name: Yasp!
 
-  ssl:
-    bundle:
-      jks:
-        server:
-          key:
-            alias: ${keyAlias}
-          keystore:
-            location: ${keyStoreLocation}
-            password: ${keyStorePassword}
-            type: ${keyStoreType}
-
-
   servlet:
     multipart:
       max-file-size: 3MB
@@ -24,9 +12,6 @@ spring:
 server:
   shutdown: graceful
   port: 9810
-  ssl:
-    bundle: "server"
-    enabled-protocols: TLSv1.3
 
 rsa:
   private-key: classpath:certs/private-key-2.pem

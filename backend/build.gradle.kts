@@ -85,8 +85,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
 }
 
-    val frontendDir = rootDir.resolve("frontend")
-    val frontendDistDir = frontendDir.resolve("dist")
+val frontendDir = rootDir.resolve("frontend")
+val frontendDistDir = frontendDir.resolve("dist")
 
 node {
     version.set("18.18.0")
@@ -99,30 +99,51 @@ kotlin {
     }
 }
 
+application {
+    applicationDefaultJvmArgs = listOf("-Dspring.profiles.active=prod")
+}
+
 val credentials = Properties().apply {
     load(FileInputStream(projectDir.resolve(".server")))
+}
+
+class SslParams(properties: Properties, prefix: String) {
+    var keyAlias: String? = null
+    var keyStoreLocation: String? = null
+    var keyStorePassword: String? = null
+    var keyStoreType: String? = null
+
+    init {
+        keyAlias = properties.getProperty("$prefix.keyAlias")
+        keyStoreLocation = properties.getProperty("$prefix.keyStoreLocation")
+        keyStorePassword = properties.getProperty("$prefix.keyStorePassword")
+        keyStoreType = properties.getProperty("$prefix.keyStoreType")
+    }
+
+    fun toMap(): Map<String, String> {
+        return mapOf(
+            "keyAlias" to keyAlias!!,
+            "keyStoreLocation" to keyStoreLocation!!,
+            "keyStorePassword" to keyStorePassword!!,
+            "keyStoreType" to keyStoreType!!
+        )
+    }
+
 }
 
 val host = credentials.getProperty("host")
 val user = credentials.getProperty("user")
 val password = credentials.getProperty("password")
 
-val keyStoreLocation = credentials.getProperty("keyStoreLocation")
-val keyStorePassword = credentials.getProperty("keyStorePassword")
-val keyStoreType = credentials.getProperty("keyStoreType")
-val keyAlias = credentials.getProperty("keyAlias")
-
 tasks {
 
     @Suppress("UnstableApiUsage")
     withType<ProcessResources> {
-        filesMatching("**/application.yaml") {
-            expand(
-                "keyStoreLocation" to keyStoreLocation,
-                "keyStorePassword" to keyStorePassword,
-                "keyAlias" to keyAlias,
-                "keyStoreType" to keyStoreType
-            )
+        filesMatching("**/application-local.yaml") {
+            expand(SslParams(credentials, "local").toMap())
+        }
+        filesMatching("**/application-prod.yaml") {
+            expand(SslParams(credentials, "prod").toMap())
         }
     }
 
@@ -169,6 +190,7 @@ tasks {
             }
         }
     }
+
 //
 //    val generateDocHtml = named<GenerateHtmlTask>("generateHtml") {
 //        dependsOn(processResources)
@@ -199,16 +221,22 @@ tasks {
         group = "deploy"
 
         val pi2 = Remote(
-                mapOf<String, String>("host" to host,
-                                      "user" to user,
-                                      "password" to password))
+            mapOf<String, String>(
+                "host" to host,
+                "user" to user,
+                "password" to password
+            )
+        )
 
         doLast {
             ssh.run(delegateClosureOf<RunHandler> {
                 session(pi2, delegateClosureOf<SessionHandler> {
-                    put(hashMapOf(
-                        "from" to getByName<Zip>("bootDistZip").archiveFile.get().asFile,
-                        "into" to "/home/balage/yasp/release"))
+                    put(
+                        hashMapOf(
+                            "from" to getByName<Zip>("bootDistZip").archiveFile.get().asFile,
+                            "into" to "/home/balage/yasp/release"
+                        )
+                    )
                     execute("/home/balage/yasp/install.sh")
                 })
             })
