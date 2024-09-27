@@ -3,3 +3,5 @@
 /.jpb
 /static
 /filestore
+.server
+*.key

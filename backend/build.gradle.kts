@@ -7,6 +7,8 @@ import org.hidetake.groovy.ssh.core.Remote
 import org.hidetake.groovy.ssh.core.RunHandler
 import org.hidetake.groovy.ssh.session.SessionHandler
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.FileInputStream
+import java.util.*
 
 plugins {
     id("org.springframework.boot") version "3.1.5"
@@ -24,6 +26,8 @@ plugins {
 
 group = "hu.vissy.yasp"
 version = "0.0.1-SNAPSHOT"
+
+
 
 java.sourceCompatibility = JavaVersion.VERSION_17
 
@@ -95,7 +99,33 @@ kotlin {
     }
 }
 
+val credentials = Properties().apply {
+    load(FileInputStream(projectDir.resolve(".server")))
+}
+
+val host = credentials.getProperty("host")
+val user = credentials.getProperty("user")
+val password = credentials.getProperty("password")
+
+val keyStoreLocation = credentials.getProperty("keyStoreLocation")
+val keyStorePassword = credentials.getProperty("keyStorePassword")
+val keyStoreType = credentials.getProperty("keyStoreType")
+val keyAlias = credentials.getProperty("keyAlias")
+
 tasks {
+
+    @Suppress("UnstableApiUsage")
+    withType<ProcessResources> {
+        filesMatching("**/application.yaml") {
+            expand(
+                "keyStoreLocation" to keyStoreLocation,
+                "keyStorePassword" to keyStorePassword,
+                "keyAlias" to keyAlias,
+                "keyStoreType" to keyStoreType
+            )
+        }
+    }
+
     val npmCheckInstall by registering(NpmTask::class) {
         args.add("install")
     }
@@ -169,9 +199,9 @@ tasks {
         group = "deploy"
 
         val pi2 = Remote(
-                mapOf<String, String>("host" to "192.168.1.64",
-                                      "user" to "balage",
-                                      "password" to "Alma1234"))
+                mapOf<String, String>("host" to host,
+                                      "user" to user,
+                                      "password" to password))
 
         doLast {
             ssh.run(delegateClosureOf<RunHandler> {

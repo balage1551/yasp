@@ -1,22 +1,36 @@
-server:
-  shutdown: graceful
-  port: 9810
-
-rsa:
-  private-key: classpath:certs/private-key-2.pem
-  public-key: classpath:certs/public-key.pem
-
-
 spring:
   application:
     name: Yasp!
 
+  ssl:
+    bundle:
+      jks:
+        server:
+          key:
+            alias: ${keyAlias}
+          keystore:
+            location: ${keyStoreLocation}
+            password: ${keyStorePassword}
+            type: ${keyStoreType}
+
+
   servlet:
     multipart:
       max-file-size: 3MB
-  
+
   lifecycle:
     timeout-per-shutdown-phase: 60s
+
+server:
+  shutdown: graceful
+  port: 9810
+  ssl:
+    bundle: "server"
+    enabled-protocols: TLSv1.3
+
+rsa:
+  private-key: classpath:certs/private-key-2.pem
+  public-key: classpath:certs/public-key.pem
 
 #  datasource:
 #    jdbc-url: jdbc:postgresql://localhost:5432/homeworkmole
@@ -86,7 +100,7 @@ homeworkmole:
     search.limit: 50
 
 application:
-  allowed-origins: http://localhost:9811,http://localhost:9810,http://192.168.1.128:9811,http://192.168.1.128:9810,http://balage-srv.ddns.net:9811,http://192.168.1.193:9811,http://balage-srv.ddns.net:9810,http://192.168.1.193:9810
+  allowed-origins: https://localhost:9811,https://localhost:9810,http://localhost:9811,http://localhost:9810,http://192.168.1.128:9811,http://192.168.1.128:9810,http://balage-srv.ddns.net:9811,http://192.168.1.193:9811,http://balage-srv.ddns.net:9810,http://192.168.1.193:9810
 
 fileStore:
   #  fileKeyProvider: "hu.vissy.filestore.SequentialFileKeyProvider"

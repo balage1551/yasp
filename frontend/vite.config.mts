@@ -8,6 +8,7 @@ import path from 'path'
 import checker from 'vite-plugin-checker'
 // import { createRequire } from 'node:module';
 // const require = createRequire( import.meta.url );
+import fs from 'fs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -45,6 +46,10 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, 'certs/localhost.key')),
+      cert: fs.readFileSync(path.resolve(__dirname, 'certs/localhost.crt')),
+    }
   },
   resolve: {
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
