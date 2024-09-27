@@ -1,5 +1,5 @@
 <template>
-  <v-dialog width="1300" v-model="isOpen" >
+  <v-dialog width="1310" v-model="isOpen" >
     <v-card class="bg-black">
       <v-card-title >
         <v-icon class="mr-2">
@@ -10,8 +10,11 @@
       <v-card-text >
             <div style="width: 1000px;">
               <div class="container" @drop="patternDropped" @dragover="patternDragOver">
-                <v-img v-if="slide" ref="imageTag" @drop="patternDropped" :src="image" alt="slideInfo.imageName" class="image" @load="imageLoaded = true"></v-img>
-                <label-handler v-if="imageLoaded" :image="imageTag" :label="label"></label-handler>
+                <labeled-image-renderer v-if="slide" :slide="slide" :width="960" :height="540" :label="label"></labeled-image-renderer>
+                <v-fab v-if="slideIndex > 0" variant="outlined" icon="mdi-chevron-left" class="navigator prev" absolute @click="move(-1)"  >
+                </v-fab>
+                <v-fab v-if="slideIndex < slides.length-1" variant="outlined" icon="mdi-chevron-right" class="navigator next" absolute @click="move(1)" >
+                </v-fab>
               </div>
               <v-container fluid>
 
@@ -109,9 +112,12 @@
             <div class="slidesWithLabel">
               <v-list class="list" v-for="slide in slidesWithLabel" :key="slide.uid">
                 <v-list-item class="list">
-                  <labeled-image-renderer :slide="slide" :width="240" :height="135"
+                  <labeled-image-renderer :slide="slide" :width="240" :height="135" :background="slides.includes(slide) ? '#113169' : undefined"
+                                          :label="slides.includes(slide) ? label : undefined"
                                           :draggable="true" @dragstart="patternDragStart($event, slide)" @dragend="patternDragEnd"
-                  ></labeled-image-renderer>
+                  >
+                    <v-icon v-if="slides.includes(slide) && slide.label" class="label-alert">mdi-alert-rhombus</v-icon>
+                  </labeled-image-renderer>
                 </v-list-item>
               </v-list>
             </div>
@@ -147,8 +153,8 @@ import {
   VCol,
   VContainer,
   VDialog,
+  VFab,
   VIcon,
-  VImg,
   VList,
   VListItem,
   VRow,
@@ -156,23 +162,25 @@ import {
   VSpacer,
   VTextField
 } from 'vuetify/components'
-import { ImageSlide, LabelInfo, Slide, SlideShow } from '@/entities/SlideShowTypes'
-import { ref, watch, watchEffect } from 'vue'
-import useResourceApi from '@/api/resourceApi'
+import { ImageSlide, LabelInfo, SlideShow } from '@/entities/SlideShowTypes'
+import { computed, nextTick, ref, watch, watchEffect } from 'vue'
 import { useSlideStore } from '@/stores/slideStore'
-import LabelHandler from '@/components/LabelHandler.vue'
 import LabeledImageRenderer from '@/components/LabeledImageRenderer.vue'
 
-// const props = withDefaults(defineProps<{
-// }>(), {
-// })
+const emit = defineEmits(['close'])
 
 const isOpen = ref(false)
 
-const slide = ref<Slide | undefined>(undefined)
-const image = ref()
-const imageTag = ref<VImg>()
-const imageLoaded = ref(false)
+watch(isOpen, (v) => {
+  if (!v) {
+    slideIndex.value = -1
+    emit('close')
+  }
+})
+
+const slides = ref<ImageSlide[]>([])
+const slideIndex = ref(-1)
+const slide = computed(() => slides.value[slideIndex.value]) // ref<ImageSlide | undefined>(undefined)
 const label = ref<LabelInfo>({ text: '', size: '5%' })
 
 const isOutlined = ref(false)
@@ -195,50 +203,58 @@ watchEffect(() => {
   }
 })
 
-function open(s : ImageSlide, slideShow: SlideShow) {
+function open(s : ImageSlide | ImageSlide[], slideShow: SlideShow) {
   console.log('open', s)
-  slidesWithLabel.value = slideShow.slides.flatMap((s) => s.type === 'group' ? s.slides : [s]).filter((sl) => (sl as ImageSlide).uid !== s.uid && sl.label !== undefined) as ImageSlide[]
+  const slideList = s instanceof Array ? s : [s]
+  const slideUid = slideList.map((s) => s.uid)
+  slidesWithLabel.value = slideShow.slides
+    .flatMap((s) => s.type === 'group' ? s.slides : [s])
+    .filter((sl) => slideUid.includes((sl as ImageSlide).uid) || sl.label !== undefined) as ImageSlide[]
 
-  slide.value = s
-  isOutlined.value = s.label?.outlined !== undefined
-  label.value = s.label
-    ? { ...s.label }
-    : {
-        text: 'szöveg',
-        size: '5%',
-        anchorX: '50%',
-        anchorY: '10%',
-        align: 'center',
-        color: '#ffffff',
-        outlined: {
-          color: '#000000',
-          width: 2
+  slides.value = slideList
+  slideIndex.value = slideList.findIndex((s) => s.label !== undefined)
+  if (slideIndex.value === -1) {
+    slideIndex.value = 0
+  }
+  // const slide = slides.value[slideIndex.value]
+  nextTick(() => {
+    console.log('slideIndex.value', slideIndex.value, slide.value)
+    isOutlined.value = slide.value.label?.outlined !== undefined
+    label.value = slide.value?.label
+      ? { ...slide.value.label }
+      : {
+          text: 'szöveg',
+          size: '5%',
+          anchorX: '50%',
+          anchorY: '10%',
+          align: 'center',
+          color: '#ffffff',
+          outlined: {
+            color: '#000000',
+            width: 2
+          }
         }
-      }
-
-  useResourceApi().requestImage(s.imageName).then(response => {
-    image.value = URL.createObjectURL(response)
     isOpen.value = true
   })
 }
 
+function move(delta : number) {
+  slideIndex.value += delta
+}
+
 function save() {
-  slide.value!.label = { ...label.value }
+  slides.value.forEach((s) => {
+    s.label = { ...label.value }
+  })
   isOpen.value = false
 }
 
 function remove() {
-  delete slide.value!.label
+  slides.value.forEach((s) => {
+    delete s.label
+  })
   isOpen.value = false
 }
-
-const emit = defineEmits(['close'])
-
-watch(isOpen, (v) => {
-  if (!v) {
-    emit('close')
-  }
-})
 
 const draggedSlide = ref<ImageSlide | undefined>()
 
@@ -305,10 +321,36 @@ defineExpose({
   position:absolute;
   top: 0;
   right: 0;
-  width: 270px;
+  width: 290px;
   height: calc(100% - 52px);
   background-color: #222222 !important;
   border-bottom: 1px solid #000000;
   overflow-y: auto;
+}
+
+.navigator {
+  position: absolute;
+  z-index: 2000;
+  top: -260px;
+  color: #666666;
+}
+
+.navigator:hover {
+  color: #aaaaaa;
+}
+
+.prev {
+  left: 60px;
+}
+
+.next {
+  right: 10px;
+}
+
+.label-alert {
+  position: absolute;
+  bottom:5px;
+  left: 5px;
+  color: #de6464;
 }
 </style>

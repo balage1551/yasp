@@ -45,6 +45,13 @@
         </v-col>
         <v-spacer></v-spacer>
         <v-icon size="40"
+                :disabled="reelSelectedImageSlides.length === 0"
+                class="mr-8"
+                @click="editLabelMultiple()">
+        >
+          mdi-tag-multiple
+        </v-icon>
+        <v-icon size="40"
                 class="cursor-grab"
                 :draggable="true"
                 @dragstart="newGroupDragStart($event)"
@@ -660,6 +667,7 @@ function dropBasketToReel(target: DragTargetInfo) {
 // =====================================================================================================================
 
 const reelSelectedItems = ref<Slide[]>([])
+const reelSelectedImageSlides = computed(() => reelSelectedItems.value.filter((s) => s.type === 'image'))
 let reelLastSelectedItem: Slide | undefined
 
 // let reelLastSelectedItemIndex: number = -1
@@ -920,6 +928,14 @@ function editLabel(slide: Slide) {
   showLabelEditor.value = true
   nextTick(() => {
     labelEditor.value?.open(slide, slideShow.value)
+  })
+}
+
+function editLabelMultiple() {
+  console.log('Edit label multiple')
+  showLabelEditor.value = true
+  nextTick(() => {
+    labelEditor.value?.open(reelSelectedItems.value.filter((s) => s.type === 'image'), slideShow.value)
   })
 }
 

@@ -143,7 +143,7 @@ function deleteSlideShow(ss: SlideShowListItem) {
 }
 
 .row {
-  margin-bottom: 5px;
+  height: 50px;
 }
 
 </style>
