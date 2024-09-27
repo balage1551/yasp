@@ -81,6 +81,7 @@
 
                              @delete="deleteSlide(slide)"
                              @editLabel="editLabel(slide)"
+                             @preview="preview(slide)"
 
                              @dragover.prevent
                              :draggable="true"
@@ -164,6 +165,7 @@
 
                                  @delete="deleteSlide(inGroupSlide)"
                                  @editLabel="editLabel(inGroupSlide)"
+                                 @preview="preview(inGroupSlide)"
 
                                  @dragover.prevent
                                  :draggable="true"
@@ -253,6 +255,7 @@
            style="left:5px; top:5px;">
     </div>
   </div>
+  <preview-dialog v-model="previewVisible" :slide="previewSlide!" @close="previewVisible = false"></preview-dialog>
   <label-editor-dialog v-if="showLabelEditor" @close="hideLabelEditor" ref="labelEditor"></label-editor-dialog>
 </template>
 <script setup lang="ts">
@@ -297,6 +300,7 @@ import ImageSlideBox from '@/components/ImageSlideBox.vue'
 import TriggerSettingsPopup from '@/components/TriggerSettingsPopup.vue'
 import useSlideShowApi from '@/api/slideShowApi'
 import { useSnackbarStore } from '@/modules/snackbar/snackbarStore'
+import PreviewDialog from '@/dialogs/PreviewDialog.vue'
 
 const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
@@ -408,6 +412,18 @@ function toggleOpen(slide: GroupSlide) {
   } else {
     openedGroups.value.push(slide.uid)
   }
+}
+
+// =====================================================================================================================
+// Preview
+// =====================================================================================================================
+
+const previewSlide = ref<ImageSlide | undefined>()
+const previewVisible = ref(false)
+
+function preview(slide: ImageSlide) {
+  previewSlide.value = slide
+  previewVisible.value = true
 }
 
 // =====================================================================================================================

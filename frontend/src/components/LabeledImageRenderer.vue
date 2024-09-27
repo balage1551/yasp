@@ -1,6 +1,6 @@
 <template>
-  <div class="cont" :style="containerStyle">
-    <v-img v-if="slide" ref="imageTag" :src="image" alt="slideInfo.imageName"  :draggable="false" @load="imageLoaded = true"></v-img>
+  <div class="cont" :style="containerStyle" v-bind="props">
+    <v-img v-if="slide" ref="imageTag" :src="image" alt="slideInfo.imageName" aspect-ratio="1"  :draggable="false" @load="imageLoaded = true"></v-img>
     <label-handler v-if="imageLoaded && labelToRender" :image="imageTag" :label="labelToRender"></label-handler>
     <slot class="top"></slot>
   </div>

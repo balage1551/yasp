@@ -8,7 +8,7 @@
                 <div class="slide-index">{{ fullIndex(slide)  }}</div>
 
                 <v-img v-if="slide.missing !== true" class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
-                       :src="slide.thumbnail" aspect-ratio="1"></v-img>
+                       :src="slide.thumbnail" aspect-ratio="1" @click="emit('preview')"></v-img>
                 <div v-else class="thumbnail mr-2" >
                   <v-icon class="justify-center" size="60"  color="red">mdi-alert</v-icon>
                 </div>
@@ -52,7 +52,7 @@ const props = withDefaults(defineProps<{
   selected: false
 })
 
-const emit = defineEmits(['delete', 'editLabel'])
+const emit = defineEmits(['delete', 'editLabel', 'preview'])
 
 const attrs = useAttrs()
 
