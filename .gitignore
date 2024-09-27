@@ -75,3 +75,4 @@ test.txttemplates/
 /.jpb/
 /filestore
 /gallery
+*.key

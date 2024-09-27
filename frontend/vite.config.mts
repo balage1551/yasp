@@ -47,8 +47,8 @@ export default defineConfig({
       usePolling: true,
     },
     https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'certs/localhost.key')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'certs/localhost.crt')),
+      key: fs.readFileSync(path.resolve(__dirname, '../certs/localhost/localhost.key')),
+      cert: fs.readFileSync(path.resolve(__dirname, '../certs/localhost/localhost.crt')),
     }
   },
   resolve: {
