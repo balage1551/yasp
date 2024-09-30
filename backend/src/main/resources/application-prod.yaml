@@ -1,15 +1,6 @@
 spring:
-
-  ssl:
-    bundle:
-      jks:
-        server:
-          key:
-            alias: ${keyAlias}
-          keystore:
-            location: ${keyStoreLocation}
-            password: ${keyStorePassword}
-            type: ${keyStoreType}
+  config:
+    import: file:certs/application-prod-ssl.yaml
 
 server:
   ssl:

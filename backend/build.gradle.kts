@@ -1,7 +1,3 @@
-//import com.github.monosoul.markdown.page.generator.gradle.plugin.GenerateHtmlTask
-//import org.hidetake.groovy.ssh.core.Remote
-//import org.hidetake.groovy.ssh.core.RunHandler
-//import org.hidetake.groovy.ssh.session.SessionHandler
 import com.github.gradle.node.npm.task.NpmTask
 import org.hidetake.groovy.ssh.core.Remote
 import org.hidetake.groovy.ssh.core.RunHandler
@@ -107,45 +103,11 @@ val credentials = Properties().apply {
     load(FileInputStream(projectDir.resolve(".server")))
 }
 
-class SslParams(properties: Properties, prefix: String) {
-    var keyAlias: String? = null
-    var keyStoreLocation: String? = null
-    var keyStorePassword: String? = null
-    var keyStoreType: String? = null
-
-    init {
-        keyAlias = properties.getProperty("$prefix.keyAlias")
-        keyStoreLocation = properties.getProperty("$prefix.keyStoreLocation")
-        keyStorePassword = properties.getProperty("$prefix.keyStorePassword")
-        keyStoreType = properties.getProperty("$prefix.keyStoreType")
-    }
-
-    fun toMap(): Map<String, String> {
-        return mapOf(
-            "keyAlias" to keyAlias!!,
-            "keyStoreLocation" to keyStoreLocation!!,
-            "keyStorePassword" to keyStorePassword!!,
-            "keyStoreType" to keyStoreType!!
-        )
-    }
-
-}
-
 val host = credentials.getProperty("host")
 val user = credentials.getProperty("user")
 val password = credentials.getProperty("password")
 
 tasks {
-
-    @Suppress("UnstableApiUsage")
-    withType<ProcessResources> {
-        filesMatching("**/application-local.yaml") {
-            expand(SslParams(credentials, "local").toMap())
-        }
-        filesMatching("**/application-prod.yaml") {
-            expand(SslParams(credentials, "prod").toMap())
-        }
-    }
 
     val npmCheckInstall by registering(NpmTask::class) {
         args.add("install")

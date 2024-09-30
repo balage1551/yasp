@@ -1,15 +1,7 @@
 spring:
+  config:
+    import: file:certs/application-local-ssl.yaml
 
-  ssl:
-    bundle:
-      jks:
-        server:
-          key:
-            alias: ${keyAlias}
-          keystore:
-            location: ${keyStoreLocation}
-            password: ${keyStorePassword}
-            type: ${keyStoreType}
 
 server:
   ssl:
