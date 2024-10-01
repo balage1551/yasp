@@ -102,8 +102,8 @@ function deleteSlideShow(ss: SlideShowListItem) {
     titleColor: 'red',
     content: i18n.t('dashboard.deleteSlideShow.message', { name: ss.name }),
     buttons: ButtonSet.yesNo
-  }).then((button) => {
-    if (button === Button.YES) {
+  }).then((answer) => {
+    if (answer.button === Button.YES) {
       useSlideShowApi().deleteSlideShow(path.value, ss.name).then(() => {
         useSnackbarStore().addSuccess('dashboard.deleteSlideShow.success')
         refresh()

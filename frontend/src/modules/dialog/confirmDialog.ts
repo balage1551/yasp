@@ -97,6 +97,10 @@ export interface CreateConfirmDialogOptions {
     width?: string | number
     /** Whether the dialog is persistent */
     persistent?: boolean
+
+    /** Whether the dialog should have a remember checkbox. */
+    enableRemember?: boolean
+
     /** The list of buttons. You can use the predefined buttons from `Button`
      * or complete sets from `ButtonSet`.
      *
@@ -118,6 +122,12 @@ let confirmDialogDefaults: CreateConfirmDialogOptions = {
   width: 300,
   persistent: false,
   buttons: ButtonSet.ok,
+  enableRemember: false
+}
+
+export type ConfirmDialogAnswer = {
+  button: string
+  remember: boolean
 }
 
 export function getConfigDialogDefaults() {
@@ -126,7 +136,7 @@ export function getConfigDialogDefaults() {
 
 export type CreateConfirmDialog = (
     options: CreateConfirmDialogOptions
-) => Promise<string>;
+) => Promise<ConfirmDialogAnswer>;
 
 export const CreateConfirmDialogKey: InjectionKey<CreateConfirmDialog> = Symbol(
   'CreateConfirmDialogKey'

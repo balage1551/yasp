@@ -15,6 +15,7 @@
           <div v-for="(l,i) in lines" :key="i">{{ l }}</div>
         </v-card-text>
         <v-card-actions class="pt-2 bg-grey-lighten-3">
+          <v-checkbox v-if="enableRemember" v-model="remember" dense hide-details label="Remember my choice"></v-checkbox>
           <v-spacer></v-spacer>
           <v-btn
             v-for="b in buttons" :key="b.key"
@@ -30,10 +31,11 @@
 </template>
 
 <script setup lang="ts">
-import { VBtn, VCard, VCardActions, VCardText, VCardTitle, VDialog, VIcon, VSpacer } from 'vuetify/components'
+import { VBtn, VCard, VCardActions, VCardText, VCardTitle, VCheckbox, VDialog, VIcon, VSpacer } from 'vuetify/components'
 import {
   Button,
   ButtonSet,
+  ConfirmDialogAnswer,
   ConfirmDialogButton,
   CreateConfirmDialogOptions,
   getConfigDialogDefaults
@@ -62,7 +64,10 @@ const lines = computed(() => (content.value ?? '').split('\n'))
 
 const buttons = ref<ConfirmDialogButton[]>()
 const buttonVariant = ref<typeof VBtn.variant>('flat')
-const resolveCallback = ref<(key: string) => void>()
+const resolveCallback = ref<(key: ConfirmDialogAnswer) => void>()
+
+const enableRemember = ref(false)
+const remember = ref(false)
 
 const createConfirmDialog = (
   dialogOptions: CreateConfirmDialogOptions = {},
@@ -79,7 +84,10 @@ const createConfirmDialog = (
   buttons.value = dialogOptions.buttons ?? defaults.buttons ?? ButtonSet.ok
   buttonVariant.value = dialogOptions.buttonVariant ?? defaults.buttonVariant ?? 'text'
   isOpen.value = true
-  return new Promise<string>((resolve) => {
+  console.log('dialogOptions', dialogOptions, dialogOptions.enableRemember, defaults.enableRemember, dialogOptions.enableRemember ?? defaults.enableRemember ?? false)
+  enableRemember.value = dialogOptions.enableRemember ?? defaults.enableRemember ?? false
+  remember.value = false
+  return new Promise<ConfirmDialogAnswer>((resolve) => {
     resolveCallback.value = resolve
   })
 }
@@ -118,7 +126,12 @@ function buttonColor(b: ConfirmDialogButton) {
 }
 
 const fireButton = (key: string) => {
-  if (resolveCallback.value) resolveCallback.value(key)
+  if (resolveCallback.value) {
+    resolveCallback.value({
+      button: key,
+      remember: remember.value
+    })
+  }
   isOpen.value = false
 }
 

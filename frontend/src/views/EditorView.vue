@@ -401,7 +401,7 @@ const unusedItemsInBasket = computed(() => basketList.value.filter((item) => ite
 
 //
 function deleteSlide(slide: Slide) {
-  reelRemoveItems([slide])
+  reelConfirmRemoveItems([slide])
 }
 
 // TODO: Note, this has a bug in 3.7.1, but fixed, so next version will be OK
@@ -774,7 +774,7 @@ function reelIsValidDragTarget(target: DragTargetInfo) {
 
 function endReelReorderDrag(dragTarget: DragTargetInfo | undefined) {
   if (!dragTarget) {
-    reelRemoveItems(reelSelectedItems.value)
+    reelConfirmRemoveItems(reelSelectedItems.value)
   }
 }
 
@@ -850,36 +850,47 @@ function dropReelReorder(target: DragTargetInfo) {
   // console.log('Updated', slideShow.value)
 }
 
+let removeWithoutConfirmation = false
+
+function reelConfirmRemoveItems(items: Slide[]) {
+  if (removeWithoutConfirmation) {
+    reelRemoveItems(items)
+  } else {
+    createConfirmDialog({
+      title: '@editor.deleteSlide.title',
+      titleColor: 'red',
+      content: '@editor.deleteSlide.message',
+      buttons: ButtonSet.yesNo,
+      enableRemember: true
+    }).then((answer) => {
+      removeWithoutConfirmation = answer.remember
+      if (answer.button === Button.YES) {
+        reelRemoveItems(items)
+      }
+    })
+  }
+}
+
 function reelRemoveItems(items: Slide[]) {
-  createConfirmDialog({
-    title: '@editor.deleteSlide.title',
-    titleColor: 'red',
-    content: '@editor.deleteSlide.message',
-    buttons: ButtonSet.yesNo
-  }).then((button) => {
-    if (button === Button.YES) {
-      // console.log('Reel remove items', items)
-      basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
+  basketSelectedItems.value.splice(0, basketSelectedItems.value.length)
 
-      const changedGroups = new Set<GroupSlide>()
-      let rootChanged = false
-      items.forEach((slide: Slide) => {
-        const isGroup = slide.type === 'group'
-        const group = isGroup ? undefined : slide.group
-        const targetContainer = group ?? slideShow.value
-        addToBasket(slide, true)
-        targetContainer.slides.splice(slide.index - 1, 1)
-        if (group) {
-          changedGroups.add(group)
-        } else {
-          rootChanged = true
-        }
-      })
-
-      updateIndex(rootChanged, changedGroups)
-      reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
+  const changedGroups = new Set<GroupSlide>()
+  let rootChanged = false
+  items.forEach((slide: Slide) => {
+    const isGroup = slide.type === 'group'
+    const group = isGroup ? undefined : slide.group
+    const targetContainer = group ?? slideShow.value
+    addToBasket(slide, true)
+    targetContainer.slides.splice(slide.index - 1, 1)
+    if (group) {
+      changedGroups.add(group)
+    } else {
+      rootChanged = true
     }
   })
+
+  updateIndex(rootChanged, changedGroups)
+  reelSelectedItems.value.splice(0, reelSelectedItems.value.length)
 }
 
 // =====================================================================================================================
