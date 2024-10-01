@@ -1,5 +1,11 @@
 <template>
   <div class="cont" :style="containerStyle" v-bind="props">
+    <div v-if="!imageLoaded" class="mr-2 loading" >
+      <v-progress-circular
+        class="justify-center"
+        indeterminate
+        color="white"></v-progress-circular>
+    </div>
     <v-img v-if="slide" ref="imageTag" :src="image" alt="slideInfo.imageName" aspect-ratio="1"  :draggable="false" @load="imageLoaded = true"></v-img>
     <label-handler v-if="imageLoaded && labelToRender" :image="imageTag" :label="labelToRender"></label-handler>
     <slot class="top"></slot>
@@ -7,7 +13,7 @@
 </template>
 <script setup lang="ts">
 
-import { VImg } from 'vuetify/components'
+import { VImg, VProgressCircular } from 'vuetify/components'
 import { ImageSlide, LabelInfo } from '@/entities/SlideShowTypes'
 import { computed, ref, watchEffect } from 'vue'
 import LabelHandler from '@/components/LabelHandler.vue'
@@ -61,6 +67,14 @@ watchEffect(() => {
 
 .top {
   z-index: 3000;
+}
+
+.loading {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
 }
 
 </style>

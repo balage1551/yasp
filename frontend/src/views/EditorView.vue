@@ -995,6 +995,7 @@ body {
 .header {
   background-color: #1e1f38;
   color: whitesmoke;
+  height: 80%;
 }
 
 .statusbar {
@@ -1050,8 +1051,9 @@ body {
 .reel-list, .basket-list {
   text-align: left;
   margin: 2px 5px;
-  background-color: #0d0d0d !important;
   user-select: none;
+  overflow-y: hidden;
+  background-color: #0d0d0d !important;
 }
 
 .slide-box {
