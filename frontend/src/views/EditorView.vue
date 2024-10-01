@@ -61,7 +61,7 @@
       </v-toolbar>
       <v-sheet ref="reel" class="reel" variant="elevated" :style="boxHeight">
 
-        <v-list v-if="slideShow && !hackRefreshTrigger" class="reel-list" v-model:opened="openedGroups" ref="dropZone">
+        <v-list v-if="slideShow " class="reel-list" v-model:opened="openedGroups" ref="dropZone">
           <template v-for="slide in slideShow.slides" :key="slide.uid">
 
             <!-- Pre main slide marker -->
@@ -99,6 +99,7 @@
             <v-list-group v-else class="group-container" :value="slide.uid">
               <template v-slot:activator="{props}">
                 <v-list-item v-bind="props"
+                             :ref="el => slideRefs.set(slide.uid, el as VListItem)"
                              :class="{ 'selected-group-head': reelSelectedItems.includes(slide) }"
                              class="group-head"
                              @dragover.prevent
@@ -912,7 +913,7 @@ function newGroupValidDragTarget(target: DragTargetInfo) {
   return target.group === undefined
 }
 
-const hackRefreshTrigger = ref(false)
+const slideRefs = ref(new Map<number, VListItem>())
 
 function newGroupInsert(dragTarget: DragTargetInfo | undefined) {
   // console.log('insert', dragTarget)
@@ -929,10 +930,13 @@ function newGroupInsert(dragTarget: DragTargetInfo | undefined) {
 
     updateIndex(true, new Set())
 
-    hackRefreshTrigger.value = true
-    nextTick(() => {
-      hackRefreshTrigger.value = false
-    })
+    // nextTick(() => {
+    //   const newGroupElement = slideRefs.value.get(group.uid)
+    //   console.log('SCR', newGroupElement)
+    //   if (newGroupElement) {
+    //     newGroupElement.$el.scrollIntoView({ behavior: 'instant' })
+    //   }
+    // })
   }
 }
 
