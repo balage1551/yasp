@@ -7,8 +7,7 @@
               <template #prepend>
                 <div class="slide-index">{{ fullIndex(slide)  }}</div>
 
-                <v-img v-if="slide.missing !== true" class="mr-2 thumbnail" style="width: 120px; height: 80px; background-color: #0d0d0d;"
-                       :src="slide.thumbnail" aspect-ratio="1" @click="emit('preview')"></v-img>
+                <labeled-image-renderer v-if="slide.missing !== true" :slide="slide" :width="120" :height="80" class="mr-2 border-b" @click="emit('preview')"></labeled-image-renderer>
                 <div v-else class="thumbnail mr-2" >
                   <v-icon class="justify-center" size="60"  color="red">mdi-alert</v-icon>
                 </div>
@@ -30,12 +29,13 @@
 </template>
 <script setup lang="ts">
 
-import { VIcon, VImg, VListItem, VListItemSubtitle, VListItemTitle } from 'vuetify/components'
+import { VIcon, VListItem, VListItemSubtitle, VListItemTitle } from 'vuetify/components'
 import { DEFAULT_GROUP_SLIDE_TRIGGER, DEFAULT_TRIGGER, ImageSlide, SlideShow, Trigger } from '@/entities/SlideShowTypes'
 import useResourceApi from '@/api/resourceApi'
 import { computed, useAttrs } from 'vue'
 import { fullIndex } from '@/entities/SlideShowUtils'
 import TriggerSettingsPopup from '@/components/TriggerSettingsPopup.vue'
+import LabeledImageRenderer from '@/components/LabeledImageRenderer.vue'
 
 // const editorApi = useEditorApi()
 const resourceApi = useResourceApi()
