@@ -7,8 +7,8 @@
               <template #prepend>
                 <div class="slide-index">{{ fullIndex(slide)  }}</div>
 
-                <labeled-image-renderer v-if="slide.missing !== true" :slide="slide" :width="120" :height="80" class="mr-2 border-b" @click="emit('preview')"></labeled-image-renderer>
-                <div v-else class="thumbnail mr-2" >
+                <labeled-image-renderer v-if="slide.missing !== true" :slide="slide" :width="120" :height="80" class="thumbnail mr-2 border-b" @click="emit('preview')"></labeled-image-renderer>
+                <div v-else class="thumbnail-missing mr-2" >
                   <v-icon class="justify-center" size="60"  color="red">mdi-alert</v-icon>
                 </div>
               </template>
@@ -92,7 +92,7 @@ const inheritedTrigger = computed(() => {
   margin-left: 8px !important;
 }
 
-.thumbnail {
+.thumbnail-missing {
   border: 1px solid #aaaaaa;
   width: 120px;
   height: 80px;
@@ -100,6 +100,10 @@ const inheritedTrigger = computed(() => {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.thumbnail:hover {
+  cursor: zoom-in;
 }
 
 .selected {
