@@ -291,7 +291,7 @@ import {
   SlideShow
 } from '@/entities/SlideShowTypes'
 import useEditorApi from '@/api/editorApi'
-import { useElementSize, useWindowSize } from '@vueuse/core'
+import { useElementSize, useEventListener, useWindowSize } from '@vueuse/core'
 import { useEditorStore } from '@/stores/editorStore'
 import useResourceApi from '@/api/resourceApi'
 import { fullIndex, getAllImageSlides, nextUID, toData } from '@/entities/SlideShowUtils'
@@ -361,8 +361,45 @@ onMounted(async () => {
       }
     })
   }
+  useEventListener(document, 'keydown', (event) => {
+    if (event.key === 's' && checkSpecialKeyState(event, { ctrl: true })) {
+      event.preventDefault()
+    }
+  })
+  useEventListener(document, 'keyup', keyboardHandler)
+
   scan()
 })
+
+type StateRule = {
+  shift?: boolean | undefined
+  ctrl?: boolean | undefined
+  alt?: boolean | undefined
+}
+
+function checkSpecialKeyState(event : KeyboardEvent | MouseEvent | DragEvent, stateRule: StateRule) {
+  if (stateRule.shift !== undefined && event.shiftKey !== stateRule.shift) {
+    return false
+  }
+  if (stateRule.ctrl !== undefined && event.ctrlKey !== stateRule.ctrl) {
+    return false
+  }
+  // noinspection RedundantIfStatementJS
+  if (stateRule.alt !== undefined && event.altKey !== stateRule.alt) {
+    return false
+  }
+  return true
+}
+
+function keyboardHandler(event: KeyboardEvent) {
+  if (event.key === 'Delete' && checkSpecialKeyState(event, { ctrl: true }) && reelSelectedItems.value.length > 0) {
+    reelConfirmRemoveItems(reelSelectedItems.value)
+  }
+  if (event.key === 's' && checkSpecialKeyState(event, { ctrl: true })) {
+    save()
+    event.preventDefault()
+  }
+}
 
 function scan() {
   console.log('scan', editorStore.path)

@@ -7,7 +7,7 @@
               <template #prepend>
                 <div class="slide-index">{{ fullIndex(slide)  }}</div>
 
-                <labeled-image-renderer v-if="slide.missing !== true" :slide="slide" :width="120" :height="80" class="thumbnail mr-2 border-b" @click="emit('preview')"></labeled-image-renderer>
+                <labeled-image-renderer v-if="slide.missing !== true" :slide="slide" :width="120" :height="80" class="thumbnail mr-2 border-b" @click.exact="emit('preview')"></labeled-image-renderer>
                 <div v-else class="thumbnail-missing mr-2" >
                   <v-icon class="justify-center" size="60"  color="red">mdi-alert</v-icon>
                 </div>
