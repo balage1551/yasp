@@ -45,13 +45,15 @@ import { ImageSlide, SlideShow } from '@/entities/SlideShowTypes'
 import { onMounted, ref, shallowRef } from 'vue'
 import CrossFader from '@/components/CrossFader.vue'
 import { SlideShowRunner, SlideShowState } from '@/entities/SlideShowRunner'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useFullscreen } from '@vueuse/core'
 import { fullIndex } from '@/entities/SlideShowUtils'
 import SlideShowProgress from '@/components/SlideShowProgress.vue'
 
 const props = withDefaults(defineProps<{
   slideShow: SlideShow
 }>(), {})
+
+const { enter } = useFullscreen()
 
 const emit = defineEmits<{(e: 'finished'): void
 }>()
@@ -95,6 +97,7 @@ onMounted(() => {
       event.preventDefault()
     }
   })
+  enter()
   show.start()
 })
 
