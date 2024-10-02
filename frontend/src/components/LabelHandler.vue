@@ -87,7 +87,7 @@ function transform(value: number | string, trim: number = 0): number {
 }
 
 const labelStyles = computed(() => {
-  const styles = [fontSizeStyle.value, anchorXStyle.value, anchorYStyle.value, colorStyle.value, outlineStyle.value]
+  const styles = [fontSizeStyle.value, anchorXStyle.value, anchorYStyle.value, colorStyle.value, outlineStyle.value, alignmentStyle.value]
   // console.log('Combined label styles: ', combined)
   return styles.filter(item => item !== undefined && item.trim() !== '').join('; ')
 })
@@ -99,6 +99,11 @@ const fontSizeStyle = computed(() => {
   } else {
     return `font-size: ${parseFloat(s)}px`
   }
+})
+
+const alignmentStyle = computed(() => {
+  const align = localLabel.value?.align ?? defaults.value.align ?? 'center'
+  return `text-align: ${align}`
 })
 
 const anchorXStyle = computed(() => {
