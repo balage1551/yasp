@@ -17,6 +17,7 @@ plugins {
     id("war")
     id("org.hidetake.ssh") version "2.11.2"
 //    id("com.github.monosoul.markdown.page.generator") version "2.4.0.0"
+//    id("org.beryx.jlink") version "3.0.1"
     application
 }
 
@@ -206,4 +207,7 @@ tasks {
     }
 }
 
-
+// https://badass-jlink-plugin.beryx.org/releases/latest/
+//jlink {
+//
+//}
