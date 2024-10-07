@@ -201,6 +201,21 @@ export class SlideShowRunner {
     this.show()
   }
 
+  jumpToSlide(slide: ImageSlide) {
+    if (this.countdown !== null) {
+      clearTimeout(this.countdown)
+    }
+    if (slide.group) {
+      this.currentSlideIndex.value = this.slideShow.slides.findIndex(s => s === slide.group)
+      this.currentInGroupIndex.value = slide.group.slides.findIndex(s => s === slide)
+    } else {
+      this.currentSlideIndex.value = this.slideShow.slides.findIndex(s => s === slide)
+      this.currentInGroupIndex.value = 0
+    }
+    this.updateCurrentSlide()
+    this.show()
+  }
+
   private setState(state: SlideShowState) {
     if (this.countdown && state !== SlideShowState.PLAYING) {
       clearTimeout(this.countdown)

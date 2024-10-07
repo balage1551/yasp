@@ -1,6 +1,6 @@
 <template>
   <div class="container" ref="screen" style="position: relative;">
-    <cross-fader ref="crossFader"></cross-fader>
+    <cross-fader ref="crossFader" @dragstart.prevent></cross-fader>
     <v-icon v-if="state === SlideShowState.HOLD_ON_SLIDE" class="icon paused-slide" size="50">mdi-mouse</v-icon>
     <v-icon v-if="state === SlideShowState.MANUAL_HOLD" class="icon paused-manual" size="50">mdi-pause</v-icon>
     <v-icon v-if="state === SlideShowState.FINISHED" class="icon finished" size="50">mdi-square</v-icon>
@@ -10,33 +10,52 @@
       {{ currentSlide?.imageName }} ({{ fullIndex(currentSlide) }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
       {{ state }} <br/>
     </div>
-    <v-card ref="controlPanel" variant="flat" class="pa-2 control-panel" :style="cpStyle" :disabled="cpPhase !== 'static'" @click.prevent.stop>
-      <v-btn v-if="state !== SlideShowState.MANUAL_HOLD" variant="flat" color="primary" class="control-panel-button" @click.stop="sendKey('Pause')"  >
-        <v-icon class="control-panel-icon" >
+    <v-card ref="controlPanel" variant="flat" class="pa-2 control-panel" :style="cpStyle"
+            :disabled="cpPhase !== 'static'" @click.prevent.stop>
+      <v-btn v-if="state !== SlideShowState.MANUAL_HOLD" variant="flat" color="primary" class="control-panel-button"
+             @click.stop="sendKey('Pause')">
+        <v-icon class="control-panel-icon">
           mdi-pause
         </v-icon>
       </v-btn>
-      <v-btn v-if="state === SlideShowState.MANUAL_HOLD" variant="flat" color="primary" class="control-panel-button" @click.stop="sendKey('Space')"  >
-        <v-icon class="control-panel-icon" >
+      <v-btn v-if="state === SlideShowState.MANUAL_HOLD" variant="flat" color="primary" class="control-panel-button"
+             @click.stop="sendKey('Space')">
+        <v-icon class="control-panel-icon">
           mdi-play
         </v-icon>
       </v-btn>
-      <v-btn variant="flat" color="primary" class="control-panel-button" :disabled="(slideShowRunner?.currentSlideIndex.value ?? 0) === 0" @click.stop="sendKey('ArrowLeft')"  >
-        <v-icon class="control-panel-icon" >
+      <v-btn variant="flat" color="primary" class="control-panel-button"
+             :disabled="(slideShowRunner?.currentSlideIndex.value ?? 0) === 0" @click.stop="sendKey('ArrowLeft')">
+        <v-icon class="control-panel-icon">
           mdi-eye-arrow-left
         </v-icon>
       </v-btn>
-      <v-btn variant="flat" color="primary" class="control-panel-button" :disabled="(slideShowRunner?.currentSlideIndex.value ?? 0) === (slideShow?.slides.length-1)"  @click.stop="sendKey('ArrowRight')"  >
-        <v-icon class="control-panel-icon" >
+      <v-btn variant="flat" color="primary" class="control-panel-button"
+             :disabled="(slideShowRunner?.currentSlideIndex.value ?? 0) === (slideShow?.slides.length-1)"
+             @click.stop="sendKey('ArrowRight')">
+        <v-icon class="control-panel-icon">
           mdi-eye-arrow-right
         </v-icon>
       </v-btn>
-      <v-btn variant="flat" color="error" class="control-panel-button" @click.stop="handleKey('Escape')"  >
-        <v-icon class="control-panel-icon" >
+      <v-btn variant="flat" color="error" class="control-panel-button" @click.stop="handleKey('Escape')">
+        <v-icon class="control-panel-icon">
           mdi-close
         </v-icon>
       </v-btn>
     </v-card>
+    <v-sheet ref="slidePickerContainer" class="slides" :style="slidePickerPositionStyle">
+      <v-list ref="slidePickerList" v-if="slidePickerVisible" class="slideList scrollable-list">
+        <v-list-item v-for="slide in allSlides" :key="slide.uid" class="slideItem" :ref="(el) => slidePickerSlideRefs.set(slide.uid, el as VListItem)">
+          <div class="position-relative" @click.prevent.stop="select(slide)">
+            <labeled-image-renderer :slide="slide" :width="slidePickerItemWidth" :height="slidePickerItemHeight"
+                                    background="#333333"></labeled-image-renderer>
+            <div class="position-absolute text-white pa-1 mt-1 ml-1 number" style="top: 0.2em; left: 0.2em;">
+              {{ fullIndex(slide) }}
+            </div>
+          </div>
+        </v-list-item>
+      </v-list>
+    </v-sheet>
     <div v-if="showHelp" class="keyboard-help">
       <div class="center">
         <div class="float-start kbc-button mr-2">Space</div>
@@ -81,9 +100,9 @@
 </template>
 <script setup lang="ts">
 
-import { VBtn, VCard, VIcon } from 'vuetify/components'
+import { VBtn, VCard, VIcon, VList, VListItem, VSheet } from 'vuetify/components'
 import { ImageSlide, SlideShow } from '@/entities/SlideShowTypes'
-import { computed, onMounted, ref, shallowRef, StyleValue, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, ref, shallowRef, StyleValue, watchEffect } from 'vue'
 import CrossFader from '@/components/CrossFader.vue'
 import { SlideShowRunner, SlideShowState } from '@/entities/SlideShowRunner'
 import {
@@ -98,6 +117,7 @@ import {
 import { fullIndex } from '@/entities/SlideShowUtils'
 import SlideShowProgress from '@/components/SlideShowProgress.vue'
 import { UseDeviceOrientation } from '@vueuse/components'
+import LabeledImageRenderer from '@/components/LabeledImageRenderer.vue'
 
 const props = withDefaults(defineProps<{
   slideShow: SlideShow
@@ -164,10 +184,18 @@ function handleKey(code: string) {
   console.log('handleKey', code)
   if (code === 'i') {
     showInfo.value = !showInfo.value
-  } if (code === 'c') {
+  }
+  if (code === 'c') {
     cpOpacity.value = 1
     cpLocation.value = cpLocation.value === 'hidden' ? 'bottom' : 'hidden'
     endSwipe()
+    return true
+  } else if (code === 'Tab') {
+    if (slidePickerVisible.value) {
+      hideSlidePicker()
+    } else {
+      showSlidePicker(true)
+    }
     return true
   } else if (code === 'F1') {
     showHelp.value = !showHelp.value
@@ -259,12 +287,12 @@ const { direction, isSwiping, distanceY, posStart } = usePointerSwipe(
             swipeOrigin.value = distanceY.value
             lastSwipeDirection.value = direction.value
           }
-        // } else if (cpLocation.value === 'top' && cpPhase.value === 'static') {
-        //   if (direction.value === 'up') {
-        //     cpPhase.value = 'hiding'
-        //     swipeOrigin.value = distanceY.value
-        //     lastSwipeDirection.value = direction.value
-        //   }
+          // } else if (cpLocation.value === 'top' && cpPhase.value === 'static') {
+          //   if (direction.value === 'up') {
+          //     cpPhase.value = 'hiding'
+          //     swipeOrigin.value = distanceY.value
+          //     lastSwipeDirection.value = direction.value
+          //   }
         } else if (cpLocation.value === 'bottom' && cpPhase.value === 'static') {
           if (direction.value === 'down') {
             cpPhase.value = 'hiding'
@@ -319,15 +347,105 @@ watchEffect(() => {
   }
 })
 
+// Slide picker
+
+const slidePickerList = ref<HTMLDivElement>()
+const slidePickerListSize = useElementSize(slidePickerList)
+const slidePickerContainer = ref<HTMLDivElement>()
+const slidePickerContainerSize = useElementSize(slidePickerContainer)
+const slidePickerItemWidth = computed(() => slidePickerContainerSize.width.value - 4)
+const slidePickerItemHeight = computed(() => slidePickerItemWidth.value * 0.66)
+const allSlides = computed(() => props.slideShow.slides.flatMap(s => s.type === 'group' ? s.slides : s).map(s => s as ImageSlide))
+const slidePickerSlideRefs = ref<Map<number, VListItem>>(new Map())
+
+const slidePickerVisible = ref(false)
+const slidePickerPosition = ref<number>(0)
+const slidePickerSwiping = ref(false)
+const slidePickerPositionStyle = computed<StyleValue>(() => {
+  return {
+    right: (slidePickerVisible.value ? slidePickerPosition.value : -slidePickerContainerSize.width.value) + 'px',
+    transition: slidePickerSwiping.value ? 'none' : 'left 0.5s ease-in-out',
+  }
+})
+
+function select(slide: ImageSlide) {
+  slideShowRunner.value?.jumpToSlide(slide)
+  if (state.value !== SlideShowState.MANUAL_HOLD) {
+    slideShowRunner.value?.handleKey('Pause')
+  }
+  hideSlidePicker()
+}
+
+const { direction: spDirection, isSwiping: spIsSwiping, distanceX: spSwipeDelta, posStart: spStart } = usePointerSwipe(
+  screen,
+  {
+    threshold: 10,
+    onSwipe() {
+      if (!slidePickerSwiping.value && spDirection.value === 'left' && spStart.x > screenWidth.value * 0.9) {
+        // console.log('swipe start', spStart.x, screenWidth.value)
+        slidePickerVisible.value = true
+        slidePickerSwiping.value = true
+        nextTick(() => {
+          if (slideShowRunner.value!.currentImageSlide) {
+            const el = slidePickerSlideRefs.value.get(slideShowRunner.value!.currentImageSlide.uid)
+            if (el) {
+              el.$el.scrollIntoView({ behavior: 'instant', block: 'center' })
+            }
+          }
+        })
+      } else if (!slidePickerSwiping.value && spDirection.value === 'right') {
+        // console.log('swipe start', spStart.x, screenWidth.value)
+        slidePickerSwiping.value = true
+      } else if (slidePickerSwiping.value && spDirection.value === 'left') {
+        slidePickerPosition.value = Math.min(0, spSwipeDelta.value - slidePickerContainerSize.width.value)
+        // console.log('swipe', spSwipeDelta.value, slidePickerContainerSize.width.value, slidePickerPosition.value)
+      } else if (slidePickerSwiping.value && spDirection.value === 'right') {
+        slidePickerPosition.value = Math.min(0, spSwipeDelta.value)
+        // console.log('swipe', spSwipeDelta.value, slidePickerContainerSize.width.value, slidePickerPosition.value)
+      }
+    },
+    onSwipeEnd(e, direction) {
+      slidePickerSwiping.value = false
+      if (slidePickerPosition.value > -slidePickerContainerSize.width.value / 2) {
+        showSlidePicker()
+      } else {
+        hideSlidePicker()
+      }
+    },
+  })
+
+function showSlidePicker(scroll: boolean = false) {
+  slidePickerVisible.value = true
+  slidePickerPosition.value = 0
+  if (state.value !== SlideShowState.MANUAL_HOLD) {
+    slideShowRunner.value?.handleKey('Pause')
+  }
+  if (scroll) {
+    nextTick(() => {
+      if (slideShowRunner.value!.currentImageSlide) {
+        const el = slidePickerSlideRefs.value.get(slideShowRunner.value!.currentImageSlide.uid)
+        if (el) {
+          el.$el.scrollIntoView({ behavior: 'instant', block: 'center' })
+        }
+      }
+    })
+  }
+}
+
+function hideSlidePicker() {
+  slidePickerVisible.value = false
+  slidePickerPosition.value = -slidePickerContainerSize.width.value
+}
+
 </script>
 
 <style scoped>
 
 .container {
   -webkit-user-select: none; /* Safari */
-  -moz-user-select: none;    /* Firefox */
-  -ms-user-select: none;     /* Internet Explorer/Edge */
-  user-select: none;         /* Standard syntax */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Standard syntax */
 }
 
 .icon {
@@ -401,6 +519,49 @@ watchEffect(() => {
 
 .control-panel-icon {
   font-size: 2rem;
+}
+
+.slides {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 15em;
+  padding: 0;
+  height: calc(100vh - 10px);
+  background-color: #111111;
+  z-index: 2000;
+}
+
+.slideList {
+  height: 100%;
+  overflow-y: auto;
+  background-color: #111111 !important;
+}
+
+.slideItem {
+  width: 100%;
+  max-width: 100%;
+  margin: 2px !important;
+  padding: 0 !important;
+  background-color: #222222;
+}
+
+.scrollable-list {
+  overflow-y: auto; /* Enable vertical scrolling */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.scrollable-list::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.number {
+  font-size: 1.5em;
+  font-weight: bold;
+  position: absolute;
+  z-index: 1000;
+  text-shadow: -1px -1px 0 #333333, 1px -1px 0 #333333, -1px 1px 0 #333333, 1px 1px 0 #333333;
 }
 
 </style>

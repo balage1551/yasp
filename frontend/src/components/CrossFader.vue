@@ -1,5 +1,5 @@
 <template>
-  <div class="image-container">
+  <div >
     <image-holder :visible="flipFlop" :slide-info="slideInfo1" @image-loaded="swap">
     </image-holder>
     <image-holder :visible="!flipFlop" :slide-info="slideInfo2" @image-loaded="swap">
