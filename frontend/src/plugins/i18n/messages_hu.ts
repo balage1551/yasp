@@ -115,7 +115,7 @@ export const messagesHU = merge({}, messagesCommon, {
     },
   },
   slideShowInfo: {
-    title: 'A rendelkezésre álló diavetítések',
+    title: 'Diavetítések',
     new: 'Új diavetítés',
     edit: 'Diavetítés szerkesztése',
     delete: 'Diavetítés törlése',

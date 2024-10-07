@@ -26,6 +26,7 @@ class SlideShowController : BaseController() {
         val rootPath: Path = Path.of(arguments.path)
         val slideShowListResponseDTO = SlideShowListResponseDTO(arguments.path,
             !arguments.editorDisabled,
+            arguments.editorLocked,
             Files.list(rootPath)
                 .filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".yasp.json") }
                 .map { SlideShowListItemDTO(it.fileName.toString().substringBeforeLast(".yasp.json")) }

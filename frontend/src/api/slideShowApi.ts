@@ -8,6 +8,7 @@ export type SlideShowListItem = {
 export type SlideShowList = {
   path: string
   editable: boolean
+  locked: boolean
   slideShows: SlideShowListItem[]
 }
 

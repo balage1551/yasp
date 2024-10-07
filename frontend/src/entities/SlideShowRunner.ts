@@ -73,6 +73,7 @@ export class SlideShowRunner {
     if (code === 'KeyP' || code === 'Pause') {
       switch (this.state) {
         case SlideShowState.PLAYING:
+        case SlideShowState.HOLD_ON_SLIDE:
           this.setState(SlideShowState.MANUAL_HOLD)
           break
         case SlideShowState.MANUAL_HOLD:

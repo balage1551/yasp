@@ -71,13 +71,15 @@ fun main(args: Array<String>) {
     val directory by parser.argument(ArgType.String, description = "Root directory of the slideshow").optional().default(".")
     val doNotOpenBrowser by parser.option(ArgType.Boolean, fullName = "no-browser", description = "Do not open app in browser").default(false)
     val editorDisabled by parser.option(ArgType.Boolean, fullName = "no-editor", description = "Disable editor").default(false)
+    val editorLocked by parser.option(ArgType.Boolean, fullName = "editor-locked", description = "Lock the editor by default").default(false)
     val autoStart by parser.option(ArgType.String, shortName = "a", fullName = "autostart", description = "autostart").default("")
     parser.parse(args)
 
     arguments = Arguments(
         path = directory,
         doNotOpenBrowser = doNotOpenBrowser,
-        editorDisabled = editorDisabled
+        editorDisabled = editorDisabled,
+        editorLocked = editorLocked
     )
 
     SpringApplication.run(YaspApplication::class.java, *args)

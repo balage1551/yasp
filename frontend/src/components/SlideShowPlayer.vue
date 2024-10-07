@@ -10,15 +10,30 @@
       {{ currentSlide?.imageName }} ({{ fullIndex(currentSlide) }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
       {{ state }} <br/>
     </div>
-    <v-card ref="controlPanel" variant="flat" class="pa-2 control-panel" :style="cpStyle" :disabled="cpPhase !== 'static'">
-      <v-btn variant="flat" class="" color="primary" style="height: 3rem;" @click.stop="sendKey('KeyP')"  >
-        <v-icon size="2rem" >
+    <v-card ref="controlPanel" variant="flat" class="pa-2 control-panel" :style="cpStyle" :disabled="cpPhase !== 'static'" @click.prevent.stop>
+      <v-btn v-if="state !== SlideShowState.MANUAL_HOLD" variant="flat" color="primary" class="control-panel-button" @click.stop="sendKey('Pause')"  >
+        <v-icon class="control-panel-icon" >
           mdi-pause
         </v-icon>
       </v-btn>
-      <v-btn variant="flat" class="ml-2" color="primary" style="height: 3rem;">
-        <v-icon size="2rem">
+      <v-btn v-if="state === SlideShowState.MANUAL_HOLD" variant="flat" color="primary" class="control-panel-button" @click.stop="sendKey('Space')"  >
+        <v-icon class="control-panel-icon" >
           mdi-play
+        </v-icon>
+      </v-btn>
+      <v-btn variant="flat" color="primary" class="control-panel-button" :disabled="(slideShowRunner?.currentSlideIndex.value ?? 0) === 0" @click.stop="sendKey('ArrowLeft')"  >
+        <v-icon class="control-panel-icon" >
+          mdi-eye-arrow-left
+        </v-icon>
+      </v-btn>
+      <v-btn variant="flat" color="primary" class="control-panel-button" :disabled="(slideShowRunner?.currentSlideIndex.value ?? 0) === (slideShow?.slides.length-1)"  @click.stop="sendKey('ArrowRight')"  >
+        <v-icon class="control-panel-icon" >
+          mdi-eye-arrow-right
+        </v-icon>
+      </v-btn>
+      <v-btn variant="flat" color="error" class="control-panel-button" @click.stop="handleKey('Escape')"  >
+        <v-icon class="control-panel-icon" >
+          mdi-close
         </v-icon>
       </v-btn>
     </v-card>
@@ -52,6 +67,10 @@
       <div class="center">
         <div class="float-start kbc-button mr-5">I</div>
         <span> Dia információk megjelenítése és elrejtése</span>
+      </div>
+      <div class="center">
+        <div class="float-start kbc-button mr-5">C</div>
+        <span> Vezérlőbillentyűk megjelenítése</span>
       </div>
       <div class="center">
         <div class="float-start kbc-button mr-5">F1</div>
@@ -127,28 +146,41 @@ onMounted(() => {
     })
   slideShowRunner.value = show
   total.value = show.slideShow.slides.length
-  useEventListener(window, 'keydown', (event) => {
-    if (event.key === 'i') {
-      showInfo.value = !showInfo.value
-    } else if (event.key === 'F1') {
-      showHelp.value = !showHelp.value
-      event.preventDefault()
-    } else if (event.key === 'Escape') {
-      if (escapePressed.value) {
-        show.stop()
-        emit('finished')
-      } else {
-        escapePressed.value = true
-        setTimeout(() => {
-          escapePressed.value = false
-        }, 1000)
-      }
-      event.preventDefault()
+  useEventListener(window, 'keydown', (e) => {
+    if (handleKey(e.key)) {
+      e.preventDefault()
     }
   })
   enterFullScreen()
   show.start()
 })
+
+function handleKey(code: string) {
+  console.log('handleKey', code)
+  if (code === 'i') {
+    showInfo.value = !showInfo.value
+  } if (code === 'c') {
+    cpOpacity.value = 1
+    cpLocation.value = cpLocation.value === 'hidden' ? 'bottom' : 'hidden'
+    endSwipe()
+    return true
+  } else if (code === 'F1') {
+    showHelp.value = !showHelp.value
+    return true
+  } else if (code === 'Escape') {
+    if (escapePressed.value) {
+      slideShowRunner.value?.stop()
+      emit('finished')
+    } else {
+      escapePressed.value = true
+      setTimeout(() => {
+        escapePressed.value = false
+      }, 1000)
+    }
+    return true
+  }
+  return false
+}
 
 // CONTROL PANEL
 type ControlPanelLocation = 'top' | 'bottom' | 'left' | 'right' | 'hidden'
@@ -345,6 +377,18 @@ watchEffect(() => {
   z-index: 5000;
   position: absolute;
   background-color: #1a1a1a;
+}
+
+.control-panel-button {
+  height: 3rem;
+}
+
+.control-panel-button:not(:first-of-type) {
+  margin-left: 0.5em;
+}
+
+.control-panel-icon {
+  font-size: 2rem;
 }
 
 </style>

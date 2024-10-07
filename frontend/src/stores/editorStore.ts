@@ -7,6 +7,7 @@ import { processSlideShowData } from '@/entities/SlideShowUtils'
 export const useEditorStore =
   defineStore('editor', () => {
     const enabled = ref<boolean>(false)
+    const locked = ref<boolean>(false)
     const path = ref<string>('')
     const name = ref<string>('')
     const originalName = ref<string>('')
@@ -44,6 +45,7 @@ export const useEditorStore =
       name,
       originalName,
       enabled,
+      locked,
       slideShow,
 
       setCurrentSlideShow,
