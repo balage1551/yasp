@@ -318,6 +318,13 @@ watchEffect(() => {
 
 <style scoped>
 
+.container {
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* Internet Explorer/Edge */
+  user-select: none;         /* Standard syntax */
+}
+
 .icon {
   z-index: 1000;
   position: fixed;
