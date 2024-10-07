@@ -6,7 +6,7 @@
         indeterminate
         color="white"></v-progress-circular>
     </div>
-    <v-img v-if="slide" ref="imageTag" :src="image" alt="slideInfo.imageName" aspect-ratio="1"  :draggable="false" @load="imageLoaded = true"></v-img>
+    <v-img v-if="slide" ref="imageTag"  :style="containerStyle" :src="image" alt="slideInfo.imageName" aspect-ratio="1"  :draggable="false" @load="imageLoaded = true" ></v-img>
     <label-handler v-if="imageLoaded && labelToRender" :image="imageTag" :label="labelToRender"></label-handler>
     <slot class="top"></slot>
   </div>
@@ -18,6 +18,7 @@ import { ImageSlide, LabelInfo } from '@/entities/SlideShowTypes'
 import { computed, ref, watchEffect } from 'vue'
 import LabelHandler from '@/components/LabelHandler.vue'
 import useResourceApi from '@/api/resourceApi'
+import { useWindowSize } from '@vueuse/core'
 
 const props = withDefaults(defineProps<{
   slide: ImageSlide,
@@ -26,8 +27,8 @@ const props = withDefaults(defineProps<{
   label?: LabelInfo | undefined
   background?: string
 }>(), {
-  width: 1920,
-  height: 1080,
+  width: undefined,
+  height: undefined,
   label: undefined,
   background: '#333333'
 })
@@ -38,12 +39,17 @@ const imageLoaded = ref(false)
 const labelToRender = computed(() => {
   return props.label ?? props.slide.label
 })
+const windowSize = useWindowSize()
+
+const viewWidth = computed(() => props.width ?? windowSize.width.value)
+const viewHeight = computed(() => props.height ?? windowSize.height.value)
 
 const containerStyle = computed(() => {
   return {
-    width: (props.width) + 'px',
-    height: props.height + 'px',
-    backgroundColor: props.background
+    width: viewWidth.value + 'px',
+    height: viewHeight.value + 'px',
+    minWidth: viewWidth.value + 'px',
+    minHeight: viewHeight.value + 'px',
   }
 })
 
@@ -51,7 +57,7 @@ watchEffect(() => {
   if (props.slide) {
     image.value = undefined
     imageLoaded.value = false
-    useResourceApi().requestThumbnail(props.slide.imageName, props.width, props.height).then((url) => {
+    useResourceApi().requestThumbnail(props.slide.imageName, viewWidth.value, viewHeight.value).then((url) => {
       image.value = URL.createObjectURL(url)
     })
   }
@@ -63,6 +69,8 @@ watchEffect(() => {
 
 .cont {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .top {
