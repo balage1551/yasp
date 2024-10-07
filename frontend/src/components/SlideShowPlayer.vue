@@ -103,7 +103,7 @@ const props = withDefaults(defineProps<{
   slideShow: SlideShow
 }>(), {})
 
-const { enter: enterFullScreen } = useFullscreen()
+const { enter: enterFullScreen, exit: exitFullScreen } = useFullscreen()
 
 const emit = defineEmits<{(e: 'finished'): void }>()
 
@@ -124,10 +124,15 @@ function swap(si: ImageSlide | undefined) {
   progress.value = si?.index ?? 0
 }
 
+function finish() {
+  exitFullScreen()
+  emit('finished')
+}
+
 function setOsdIcon(s: SlideShowState) {
   state.value = s
   if (s === SlideShowState.FINISHED) {
-    emit('finished')
+    finish()
   }
 }
 
@@ -170,7 +175,7 @@ function handleKey(code: string) {
   } else if (code === 'Escape') {
     if (escapePressed.value) {
       slideShowRunner.value?.stop()
-      emit('finished')
+      finish()
     } else {
       escapePressed.value = true
       setTimeout(() => {
