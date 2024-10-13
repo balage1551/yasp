@@ -80,6 +80,10 @@
         <span> Megállított vetítés újraindítása</span>
       </div>
       <div class="center">
+        <div class="float-start kbc-button mr-5">Tab</div>
+        <span>Diaválasztó sáv megjelenítése és elrejtése</span>
+      </div>
+      <div class="center">
         <div class="float-start kbc-button mr-5">Esc</div>
         <span> Megszakítja a vetítést (kétszer, gyorsan lenyomva)</span>
       </div>
