@@ -1,6 +1,8 @@
 import { GroupSlide, ImageSlide, Slide, SlideShow } from '@/entities/SlideShowTypes'
 import { useEventListener } from '@vueuse/core'
 import { Ref, ref } from 'vue'
+import { useImageCache } from '@/stores/imageCacheStore'
+import { SlideShowNavigator } from '@/entities/SlideShowNavigator'
 
 export enum SlideShowState {
   PLAYING = 'playing',
@@ -8,6 +10,14 @@ export enum SlideShowState {
   MANUAL_HOLD = 'manualHold',
   FINISHED = 'finished'
 }
+
+// NOTE: SlideIndex is 1-based
+type SlideIndex = {
+  slideIndex: number
+  inGroupIndex: number
+}
+
+const imageCacheStore = useImageCache()
 
 export class SlideShowRunner {
   slideShow: SlideShow
@@ -23,11 +33,13 @@ export class SlideShowRunner {
   private state: SlideShowState = SlideShowState.PLAYING
 
   private visitedSlides = new Set<Slide>()
+  private navigator: SlideShowNavigator
 
   constructor(slideShow: SlideShow,
     onSwap: (slideInfo: ImageSlide | undefined) => void,
     onStateChange: (state: SlideShowState) => void) {
     this.slideShow = slideShow
+    this.navigator = new SlideShowNavigator(slideShow)
     this.onSwap = onSwap
     this.onStateChange = onStateChange
   }
@@ -94,13 +106,19 @@ export class SlideShowRunner {
   }
 
   updateCurrentSlide() {
-    let slide : Slide = this.slideShow.slides[this.currentSlideIndex.value]
+    let slide: Slide = this.slideShow.slides[this.currentSlideIndex.value]
     this.currentSlide.value = slide
     if (slide.type === 'group') {
       slide = slide.slides[this.currentInGroupIndex.value]
     }
     this.currentImageSlide = slide
     return slide
+  }
+
+  updateCurrentSlide2(slides: SlideIndex) {
+    this.currentSlideIndex.value = slides.slideIndex - 1
+    this.currentInGroupIndex.value = slides.inGroupIndex - 1
+    return this.updateCurrentSlide()
   }
 
   show() {
@@ -122,6 +140,32 @@ export class SlideShowRunner {
     }
     this.visitedSlides.add(slide)
   }
+
+  // getLookAheadSlides(origin: SlideIndex, into: SlideIndex[] = []) {
+  //   let current = this.toSlide(origin)
+  //   if (!current) {
+  //     return into
+  //   }
+  //   let c = 0
+  //   const topSlide = this.toSlideIndex(current.group ?? current)
+  //   const startIndex = current.group ? origin.inGroupIndex : 1
+  //   while (c < 5) {
+  //     const nextIndex = this.calculateNextSlide(topSlide)
+  //     if (!current) {
+  //       return into
+  //     } else {
+  //       into.push(nextIndex)
+  //       current = this.toSlide(nextIndex)
+  //       if (current.group) {
+  //         into.push(nextIndex)
+  //         this.getLookAheadSlides(nextIndex, into)
+  //       }
+  //     }
+  //     const anchor = origin
+  //     const next = this.calculateNextSlide(last)
+  //     c++
+  //   }
+  // }
 
   private getTrigger(slide: ImageSlide) {
     let trigger = slide.trigger
@@ -171,33 +215,77 @@ export class SlideShowRunner {
     this.show()
   }
 
-  showNext(exitGroup : 'force' | 'at-end' | undefined = undefined) {
-    if (this.countdown !== null) {
-      clearTimeout(this.countdown)
+  toSlide(index: SlideIndex | undefined): ImageSlide | undefined {
+    if (index === undefined) {
+      return undefined
     }
-    this.countdown = null
-    const slide = this.currentSlide.value
+    let slide = this.slideShow.slides[index.slideIndex - 1]
+    if (slide.type === 'group') {
+      slide = (slide as GroupSlide).slides[index.inGroupIndex! - 1]
+    }
+    return slide
+  }
+
+  toSlideIndex(slide: Slide | undefined): SlideIndex | undefined {
+    if (slide === undefined) {
+      return undefined
+    } else {
+      if (slide.type === 'image' && slide.group !== undefined) {
+        return { slideIndex: slide.group.index, inGroupIndex: slide.index }
+      } else {
+        return { slideIndex: slide.index, inGroupIndex: 0 }
+      }
+    }
+  }
+
+  calculateNextSlide(origin: SlideIndex | undefined, exitGroup: 'force' | 'at-end' | undefined = undefined): SlideIndex | undefined {
     let moveOn = false
-    if (slide?.type === 'group' && exitGroup !== 'force') {
-      this.currentInGroupIndex.value++
-      if (this.currentInGroupIndex.value >= slide.slides.length) {
-        this.currentInGroupIndex.value = 0
+    let currentSlideIndex: number | undefined = origin?.slideIndex || 0
+    let currentInGroupIndex: number | undefined = origin?.inGroupIndex || 0
+    const slide = this.toSlide(origin)
+    if (!slide) {
+      return this.toSlideIndex(slide)
+    }
+
+    if (slide.group && exitGroup !== 'force') {
+      currentInGroupIndex++
+      if (currentInGroupIndex > slide.group.slides.length) {
+        currentInGroupIndex = 1
         if (exitGroup === 'at-end') {
           moveOn = true
         }
       }
     }
-    if (moveOn || exitGroup === 'force' || slide?.type === 'image') {
-      this.currentSlideIndex.value++
-      this.currentInGroupIndex.value = 0
-      if (this.currentSlideIndex.value >= this.slideShow.slides.length) {
-        this.setState(SlideShowState.FINISHED)
-        this.onSwap(undefined)
-        return
+    if (moveOn || exitGroup === 'force' || slide.group === undefined) {
+      currentSlideIndex++
+      currentInGroupIndex = 0
+      if (currentSlideIndex > this.slideShow.slides.length) {
+        return undefined
+      }
+      if (this.slideShow.slides[currentSlideIndex - 1].type === 'group') {
+        currentInGroupIndex = 1
       }
     }
-    console.log('Showing next', this.currentSlideIndex.value, this.currentInGroupIndex.value)
-    this.updateCurrentSlide()
+    const result = { slideIndex: currentSlideIndex, inGroupIndex: currentInGroupIndex }
+    console.log('calculate next of ', origin, 'is', result)
+    return result
+  }
+
+  showNext(exitGroup: 'force' | 'at-end' | undefined = undefined) {
+    if (this.countdown !== null) {
+      clearTimeout(this.countdown)
+    }
+    this.countdown = null
+    const next = this.calculateNextSlide(this.toSlideIndex(this.currentImageSlide), exitGroup)
+    console.log('Showing next', next)
+    // const lookAhead = this.getLookAheadSlides(next)
+    if (next === undefined) {
+      this.setState(SlideShowState.FINISHED)
+      this.onSwap(undefined)
+      return
+    } else {
+      this.updateCurrentSlide2(next)
+    }
     this.show()
   }
 

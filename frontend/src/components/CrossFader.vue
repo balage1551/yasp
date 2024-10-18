@@ -1,8 +1,8 @@
 <template>
   <div >
-    <image-holder :visible="flipFlop" :slide-info="slideInfo1" @image-loaded="swap">
+    <image-holder :visible="flipFlop" :slide-info="slideInfo1" :cached="true" @image-loaded="swap">
     </image-holder>
-    <image-holder :visible="!flipFlop" :slide-info="slideInfo2" @image-loaded="swap">
+    <image-holder :visible="!flipFlop" :slide-info="slideInfo2" :cached="true" @image-loaded="swap">
     </image-holder>
   </div>
 </template>

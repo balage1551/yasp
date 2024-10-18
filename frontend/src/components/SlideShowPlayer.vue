@@ -180,7 +180,7 @@ onMounted(() => {
       e.preventDefault()
     }
   })
-  enterFullScreen()
+  // enterFullScreen()
   show.start()
 })
 

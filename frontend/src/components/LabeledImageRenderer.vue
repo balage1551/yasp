@@ -17,21 +17,25 @@ import { VImg, VProgressCircular } from 'vuetify/components'
 import { ImageSlide, LabelInfo } from '@/entities/SlideShowTypes'
 import { computed, ref, watchEffect } from 'vue'
 import LabelHandler from '@/components/LabelHandler.vue'
-import useResourceApi from '@/api/resourceApi'
 import { useWindowSize } from '@vueuse/core'
+import { useImageCache } from '@/stores/imageCacheStore'
 
 const props = withDefaults(defineProps<{
   slide: ImageSlide,
   width?: number,
   height?: number,
   label?: LabelInfo | undefined
-  background?: string
+  background?: string,
+  cached?: boolean
 }>(), {
   width: undefined,
   height: undefined,
   label: undefined,
-  background: '#333333'
+  background: '#333333',
+  cached: false
 })
+
+const imageCacheStore = useImageCache()
 
 const imageTag = ref<HTMLImageElement | undefined>()
 const image = ref<string | Blob | undefined>(undefined)
@@ -44,6 +48,9 @@ const windowSize = useWindowSize()
 const viewWidth = computed(() => props.width ?? windowSize.width.value)
 const viewHeight = computed(() => props.height ?? windowSize.height.value)
 
+const emit = defineEmits<{(e: 'image-loaded'): void
+}>()
+
 const containerStyle = computed(() => {
   return {
     width: viewWidth.value + 'px',
@@ -54,11 +61,13 @@ const containerStyle = computed(() => {
 })
 
 watchEffect(() => {
-  if (props.slide) {
+  if (props.slide && viewWidth.value && viewHeight.value) {
+    console.log('loading image: ', props.slide, props.slide.imageName, viewWidth.value, viewHeight.value)
     image.value = undefined
     imageLoaded.value = false
-    useResourceApi().requestThumbnail(props.slide.imageName, viewWidth.value, viewHeight.value).then((url) => {
-      image.value = URL.createObjectURL(url)
+    imageCacheStore.getImage(props.slide.imageName, props.cached, viewWidth.value, viewHeight.value).then((url) => {
+      image.value = url
+      emit('image-loaded')
     })
   }
 })
