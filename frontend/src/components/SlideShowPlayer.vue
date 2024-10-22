@@ -56,6 +56,10 @@
         </v-list-item>
       </v-list>
     </v-sheet>
+    <v-sheet ref="cacheState" class="cacheState" >
+      <div v-for="n in cacheStats.cached" :key="n" class="cacheBox cacheBoxReady"></div>
+      <div v-for="n in cacheStats.pending" :key="n" class="cacheBox cacheBoxPending"></div>
+    </v-sheet>
     <div v-if="showHelp" class="keyboard-help">
       <div class="center">
         <div class="float-start kbc-button mr-2">Space</div>
@@ -122,6 +126,8 @@ import { fullIndex } from '@/entities/SlideShowUtils'
 import SlideShowProgress from '@/components/SlideShowProgress.vue'
 import { UseDeviceOrientation } from '@vueuse/components'
 import LabeledImageRenderer from '@/components/LabeledImageRenderer.vue'
+import { useSlideStore } from '@/stores/slideStore'
+import { imageCacheOnUpdateBus, ImageCacheUpdateEvent, useImageCache } from '@/stores/imageCacheStore'
 
 const props = withDefaults(defineProps<{
   slideShow: SlideShow
@@ -130,6 +136,13 @@ const props = withDefaults(defineProps<{
 const { enter: enterFullScreen, exit: exitFullScreen } = useFullscreen()
 
 const emit = defineEmits<{(e: 'finished'): void }>()
+
+const imageCacheStore = useImageCache()
+const cacheStats = ref<ImageCacheUpdateEvent>({ cached: 0, pending: 0 })
+
+imageCacheOnUpdateBus.on((e: ImageCacheUpdateEvent) => {
+  cacheStats.value = e
+})
 
 const crossFader = ref<typeof CrossFader>()
 const state = ref<SlideShowState>()
@@ -142,7 +155,8 @@ const slideShowRunner = shallowRef<SlideShowRunner>()
 const escapePressed = ref(false)
 const screen = ref<HTMLDivElement>()
 
-function swap(si: ImageSlide | undefined) {
+function swap(si: ImageSlide | undefined, cacheRequest: ImageSlide[]) {
+  imageCacheStore.requestImagePrefetch(cacheRequest)
   currentSlide.value = si
   crossFader.value?.setNext(si)
   progress.value = si?.index ?? 0
@@ -167,8 +181,10 @@ function sendKey(code: string) {
 
 onMounted(() => {
   const show = new SlideShowRunner(props.slideShow,
-    (si) => {
-      swap(si)
+    useSlideStore().lookAhead,
+    useSlideStore().lookBehind,
+    (si, cache) => {
+      swap(si, cache)
     },
     (state: SlideShowState) => {
       setOsdIcon(state)
@@ -523,6 +539,31 @@ function hideSlidePicker() {
 
 .control-panel-icon {
   font-size: 2rem;
+}
+
+.cacheState {
+  position: absolute;
+  top: calc( 100vh - 50px );
+  left: 10px;
+  height: 2em;
+  padding: 5px;
+  background-color: #88888880;
+  z-index: 2000;
+}
+
+.cacheBox {
+  width: 0.75em;
+  height: 0.75em;
+  margin: 0 0.10em;
+  display: inline-block;
+}
+
+.cacheBoxReady {
+  background-color: #0077cb;
+}
+
+.cacheBoxPending {
+  background-color: #004372;
 }
 
 .slides {

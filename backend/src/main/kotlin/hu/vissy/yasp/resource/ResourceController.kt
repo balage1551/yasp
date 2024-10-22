@@ -46,6 +46,7 @@ class ResourceController : BaseController() {
         val filePath = "${arguments.path}/${request.fileName}"
         val key = "${filePath}@${requestedWidth}x${requestedHeight}"
         log.info("Requesting thumbnail: $key")
+        Thread.sleep(1000)
         if (!thumbnailCache.containsKey(key)) {
             val imgFile: Path = Path.of(filePath)
             val originalImage: BufferedImage = ImageIO.read(Files.newInputStream(imgFile))

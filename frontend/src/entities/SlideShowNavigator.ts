@@ -77,6 +77,8 @@ export class SlideShowNavigator {
   }
 
   public getNeighbours(slide: ImageSlide, back: number, ahead: number): ImageSlide[] {
+    console.log('Neighbours', slide.uid, back, ahead)
+
     const result: ImageSlide[] = []
     const visited: Set<number> = new Set()
 

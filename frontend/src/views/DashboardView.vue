@@ -33,6 +33,22 @@
             </table>
           </v-card-text>
         </v-card>
+
+      <v-card v-if="!play" class="slide-show-info">
+        <v-card-title class="slide-show-info-title">
+          Cache Tester
+        </v-card-title>
+        <v-card-text class="slide-show-info-details">
+          <v-btn @click="testAddSet1">Add set 1</v-btn>
+          <v-btn class="ml-3" @click="testAddSet2">Add set 2 (clear)</v-btn>
+          <div class="mt-2"> {{ cache.statistics }} </div>
+          <v-sheet ref="cacheState" class="cacheState" >
+            <div v-for="n in cache.statistics.cached" :key="n" class="cacheBox cacheBoxReady"></div>
+            <div v-if="cache.statistics.hasRequestInProgress" class="cacheBox cacheBoxInProgress"></div>
+            <div v-for="n in cache.statistics.pending" :key="n" class="cacheBox cacheBoxPending"></div>
+          </v-sheet>
+        </v-card-text>
+      </v-card>
         <slide-show-player v-if="play && slideShow" :slideShow="slideShow" @finished="play = false">
         </slide-show-player>
     </v-container>
@@ -41,7 +57,7 @@
 </template>
 <script setup lang="ts">
 
-import { VBtn, VCard, VCardText, VCardTitle, VContainer, VIcon } from 'vuetify/components'
+import { VBtn, VCard, VCardText, VCardTitle, VContainer, VIcon, VSheet } from 'vuetify/components'
 import { computed, onMounted, ref, shallowRef, ShallowRef } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
 import { SlideShow } from '@/entities/SlideShowTypes'
@@ -53,6 +69,7 @@ import { useRouter } from 'vue-router'
 import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDialog'
 import { useI18n } from 'vue-i18n'
 import { useSnackbarStore } from '@/modules/snackbar/snackbarStore'
+import { useGeneralImageCacheStore } from '@/stores/imageCacheStoreGeneric'
 
 const createConfirmDialog = useConfirmDialog()!
 const i18n = useI18n()
@@ -70,7 +87,54 @@ const editorVisible = computed(() => editable.value && unlocked.value)
 
 onMounted(() => {
   refresh()
+  testGenericCacheStore()
 })
+
+const cache = useGeneralImageCacheStore()
+
+function testGenericCacheStore() {
+  cache.request({ imageName: 'IMG-20240814-141932-0051.jpg', width: 100, height: 100 })
+  cache.request({ imageName: 'IMG-20240812-105710-0010.jpg', width: 100, height: 100 }, {
+    resolver: (res) => {
+      console.log('Received', res)
+      cache.request({ imageName: 'IMG-20240812-105710-0010.jpg', width: 100, height: 100 }, {
+        resolver: (res) => {
+          console.log('Received again', res)
+        }
+      })
+    }
+  })
+  cache.request({ imageName: 'IMG-20240812-183049-0021.jpg', width: 100, height: 100 }, { immediate: true })
+}
+
+function testAddSet1() {
+  cache.batchRequest(
+    [
+      { imageName: 'IMG-20240812-182904-0020.jpg' },
+      { imageName: 'IMG-20240812-183049-0021.jpg' },
+      { context: { imageName: 'IMG-20240812-185726-0022.jpg' } },
+      { context: { imageName: 'IMG-20240813-101424-0023.jpg' }, immediate: true },
+      { imageName: 'IMG-20240813-101736-0024.jpg' }
+    ], {
+      common: { width: 100, height: 100 },
+    })
+}
+
+function testAddSet2() {
+  cache.batchRequest(
+    [
+      { imageName: 'IMG-20240814-101117-0035.jpg' },
+      { imageName: 'IMG-20240812-183049-0021.jpg' },
+      { context: { imageName: 'IMG-20240813-215014-0032.jpg' } },
+      { context: { imageName: 'IMG-20240813-101424-0023.jpg' }, immediate: true },
+      { imageName: 'IMG-20240814-094643-0034.jpg' },
+      { imageName: 'IMG-20240814-104507-0040.jpg' }
+    ], {
+      common: { width: 100, height: 100 },
+      clearQueue: true,
+      clearCache: true
+    })
+}
 
 function refresh() {
   useSlideShowApi().listSlideShows().then((response) => {
@@ -174,6 +238,32 @@ function deleteSlideShow(ss: SlideShowListItem) {
 
 .row {
   height: 70px;
+}
+
+.cacheState {
+  height: 2em;
+  padding: 5px;
+  background-color: #88888880;
+  z-index: 2000;
+}
+
+.cacheBox {
+  width: 0.75em;
+  height: 0.75em;
+  margin: 0 0.10em;
+  display: inline-block;
+}
+
+.cacheBoxReady {
+  background-color: #0077cb;
+}
+
+.cacheBoxInProgress {
+  background-color: #a98c00;
+}
+
+.cacheBoxPending {
+  background-color: #004372;
 }
 
 </style>

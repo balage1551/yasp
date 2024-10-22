@@ -21,11 +21,13 @@ const imageCacheStore = useImageCache()
 
 export class SlideShowRunner {
   slideShow: SlideShow
+  lookAhead = 5
+  lookBehind = 2
   currentSlideIndex: Ref<number> = ref(0)
   currentInGroupIndex: Ref<number> = ref(0)
   currentSlide: Ref<Slide | undefined> = ref(undefined)
   currentImageSlide: ImageSlide | undefined = undefined
-  onSwap: (slideInfo: ImageSlide | undefined) => void
+  onSwap: (slideInfo: ImageSlide | undefined, cacheRequest: ImageSlide[]) => void
   onStateChange: (state: SlideShowState) => void = () => {
   }
 
@@ -36,12 +38,16 @@ export class SlideShowRunner {
   private navigator: SlideShowNavigator
 
   constructor(slideShow: SlideShow,
-    onSwap: (slideInfo: ImageSlide | undefined) => void,
+    lookAhead: number,
+    lookBehind: number,
+    onSwap: (slideInfo: ImageSlide | undefined, cache: ImageSlide[]) => void,
     onStateChange: (state: SlideShowState) => void) {
     this.slideShow = slideShow
     this.navigator = new SlideShowNavigator(slideShow)
     this.onSwap = onSwap
     this.onStateChange = onStateChange
+    this.lookAhead = lookAhead
+    this.lookBehind = lookBehind
   }
 
   start() {
@@ -126,9 +132,9 @@ export class SlideShowRunner {
     if (!slide) {
       return
     }
-    this.onSwap(slide)
     const trigger = this.getTrigger(slide)
-    console.log('Showing slide', slide.uid, slide.index, slide.imageName, trigger)
+    console.warn('Showing slide', slide.uid, slide.index, slide.imageName, trigger)
+    this.onSwap(slide, this.navigator.getNeighbours(slide, this.lookBehind, this.lookAhead))
     // if (trigger && trigger.type === 'key' && trigger.onlyOnce && this.visitedSlides.has(slide)) {
     //   trigger = undefined
     // }
@@ -140,32 +146,6 @@ export class SlideShowRunner {
     }
     this.visitedSlides.add(slide)
   }
-
-  // getLookAheadSlides(origin: SlideIndex, into: SlideIndex[] = []) {
-  //   let current = this.toSlide(origin)
-  //   if (!current) {
-  //     return into
-  //   }
-  //   let c = 0
-  //   const topSlide = this.toSlideIndex(current.group ?? current)
-  //   const startIndex = current.group ? origin.inGroupIndex : 1
-  //   while (c < 5) {
-  //     const nextIndex = this.calculateNextSlide(topSlide)
-  //     if (!current) {
-  //       return into
-  //     } else {
-  //       into.push(nextIndex)
-  //       current = this.toSlide(nextIndex)
-  //       if (current.group) {
-  //         into.push(nextIndex)
-  //         this.getLookAheadSlides(nextIndex, into)
-  //       }
-  //     }
-  //     const anchor = origin
-  //     const next = this.calculateNextSlide(last)
-  //     c++
-  //   }
-  // }
 
   private getTrigger(slide: ImageSlide) {
     let trigger = slide.trigger
@@ -281,7 +261,7 @@ export class SlideShowRunner {
     // const lookAhead = this.getLookAheadSlides(next)
     if (next === undefined) {
       this.setState(SlideShowState.FINISHED)
-      this.onSwap(undefined)
+      this.onSwap(undefined, [])
       return
     } else {
       this.updateCurrentSlide2(next)

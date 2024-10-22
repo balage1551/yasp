@@ -62,9 +62,13 @@ const containerStyle = computed(() => {
 
 watchEffect(() => {
   if (props.slide && viewWidth.value && viewHeight.value) {
-    console.log('loading image: ', props.slide, props.slide.imageName, viewWidth.value, viewHeight.value)
+    console.log('loading image: ', props.slide.uid, props.slide.imageName, viewWidth.value, viewHeight.value)
     image.value = undefined
     imageLoaded.value = false
+    imageCacheStore.waitForImage(props.slide.imageName, viewWidth.value, viewHeight.value, true).then((url) => {
+      image.value = url
+      emit('image-loaded')
+    })
     imageCacheStore.getImage(props.slide.imageName, props.cached, viewWidth.value, viewHeight.value).then((url) => {
       image.value = url
       emit('image-loaded')

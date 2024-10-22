@@ -4,6 +4,9 @@ import { LabelInfo } from '@/entities/SlideShowTypes'
 
 export const useSlideStore =
   defineStore('slide', () => {
+    const lookAhead = ref(5)
+    const lookBehind = ref(2)
+
     const labelDefaults = ref<LabelInfo>({
       text: '',
       size: '5%',
@@ -21,6 +24,8 @@ export const useSlideStore =
 
     return {
       labelDefaults,
+      lookAhead,
+      lookBehind
     }
   },
   {
