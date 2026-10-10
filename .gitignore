@@ -76,3 +76,7 @@ test.txttemplates/
 /filestore
 /gallery
 *.key
+# Docker runner (toolbelt): local runner config, updater credentials, deploy staging area
+/.yasp.drconfig
+.runner-updater.config
+/.deploy-temp/

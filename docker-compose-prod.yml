@@ -1,0 +1,23 @@
+# Production stack. It is not run from the repository: docker-runner-prod.sh deploys it to the
+# server together with toolbelt-deploy/prod/Dockerfile (as application/Dockerfile) and the war
+# (into deploy-temp/), and toolbelt-deploy/common-scripts/update.sh brings it up there.
+services:
+  application:
+    container_name: yasp-app
+    build:
+      context: .
+      dockerfile: application/Dockerfile
+    restart: unless-stopped
+    # The uid/gid of the yasp user on the server, so the slideshows the editor saves into
+    # ~/gallery stay owned by it.
+    user: '1004:1004'
+    # The slideshow root is the gallery directory in the home of the yasp user.
+    command: ['--no-browser', '--editor-locked', 'gallery']
+    ports:
+      # Plain HTTP on the loopback only; Caddy on the host serves it as
+      # https://balage-srv.ddns.net/yasp/ (toolbelt-deploy/prod/yasp.caddy).
+      - '127.0.0.1:9810:9810'
+    volumes:
+      - './gallery:/yasp/gallery'
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod

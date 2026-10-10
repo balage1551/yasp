@@ -10,10 +10,11 @@ function getBaseUrl() : string {
     console.log('Development mode: ' + import.meta.env.VITE_APP_API_BASE_URL)
     return import.meta.env.VITE_APP_API_BASE_URL
   } else {
-    const url = window.location.href
-    const path = window.location.pathname
-    console.log('Production mode: ' + url.substring(0, url.indexOf(path)))
-    return url.substring(0, url.indexOf(path))
+    // The API is served next to the page, which may sit under a path prefix (/yasp/ on the
+    // server); the router uses the hash, so the path is always the directory of the app.
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '')
+    console.log('Production mode: ' + baseUrl)
+    return baseUrl
   }
 }
 

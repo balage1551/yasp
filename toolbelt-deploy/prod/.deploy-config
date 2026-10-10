@@ -1,0 +1,30 @@
+# Deploy target "prod" of toolbelt/start-deploy.sh (docker-runner-prod.sh passes -t prod).
+# srv by its LAN address when it answers there (at home), by the public name from anywhere else.
+# Both reach the same host keys, so either name is trusted once it is in known_hosts.
+if timeout 1 bash -c '</dev/tcp/192.168.1.64/22' 2>/dev/null; then
+  remote_server="192.168.1.64"
+else
+  remote_server="balage-srv.ddns.net"
+fi
+
+# The user used to deploy the code. Default is the same as the project name (yasp); its
+# home is where the compose project lives on the server, and it has to be in the docker group.
+# remote_user="yasp"
+
+packages=$(cat <<PACKAGES
+toolbelt:
+    toolbelt/*
+PACKAGES
+)
+
+artifacts=(
+  "backend/build/libs/yasp.war"
+  "{temp}/toolbelt.zip"
+  "./docker-compose-prod.yml:."
+  "{config}/.yasp.drconfig:."
+  "{config}/Dockerfile:application"
+  "{config}/.dockerignore:."
+  "toolbelt-deploy/common-scripts/shutdown.sh:."
+  "toolbelt-deploy/common-scripts/startup.sh:."
+  "toolbelt-deploy/common-scripts/update.sh:."
+)

@@ -1,0 +1,2 @@
+# Dockerfile-local copies nothing; the sources are mounted at run time.
+*

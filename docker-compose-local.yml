@@ -1,0 +1,44 @@
+# Local development stack, driven by docker-runner-local.sh.
+#
+# The backend jar and the frontend sources come from the host: the runner builds the jar with
+# Gradle before it rebuilds the backend image, and the frontend container runs the Vite dev
+# server straight on the mounted sources, so a save hot-reloads the page.
+services:
+  backend:
+    container_name: yasp-backend
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    # Runs as the host user, so the slideshows the editor saves into gallery/ stay owned by them.
+    user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
+    # The slideshow root; the same arguments as the IntelliJ run config.
+    command: ['--no-browser', 'gallery/iceland']
+    ports:
+      - '9810:9810'
+      # 5006, not 5005: yggdrasil's local stack debugs on 5005.
+      - '5006:5005'
+    volumes:
+      # application-local.yaml imports certs/application-local-ssl.yaml by a relative path, and
+      # that points the keystore at certs/localhost, so the whole directory goes to the working dir.
+      - './certs:/yasp/certs:ro'
+      - './gallery:/yasp/gallery'
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - 'JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+  frontend:
+    container_name: yasp-frontend
+    build:
+      context: frontend
+      dockerfile: Dockerfile-local
+    # Runs as the host user, so node_modules stays owned by them.
+    user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
+    working_dir: /app/frontend
+    environment:
+      # The host user has no home inside the image; npm needs a writable one for its cache.
+      - HOME=/tmp
+    volumes:
+      # Mounted side by side as in the repository, so vite.config.mts finds ../certs/localhost.
+      - './frontend:/app/frontend'
+      - './certs/localhost:/app/certs/localhost:ro'
+    ports:
+      - '9811:9811'

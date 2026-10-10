@@ -1,0 +1,14 @@
+# Caddy routes of the app on the server; not deployed, Caddy's config belongs to root. They go
+# inside the `balage-srv.ddns.net { ... }` site block of /etc/caddy/Caddyfile, then
+# `sudo systemctl reload caddy`.
+#
+# The app is served under a path because the DDNS name has no subdomains. The prefix is stripped
+# before the app and announced in X-Forwarded-Prefix (application-prod.yaml); the trailing slash
+# matters, the frontend resolves its files and the API relative to the page.
+# The app's own port (9810) is bound to the loopback by docker-compose-prod.yml.
+	redir /yasp /yasp/
+	handle_path /yasp/* {
+		reverse_proxy 127.0.0.1:9810 {
+			header_up X-Forwarded-Prefix /yasp
+		}
+	}

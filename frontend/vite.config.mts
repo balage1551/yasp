@@ -12,6 +12,9 @@ import fs from 'fs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Relative, so the build works both at the root of a host and under a path prefix
+  // (https://balage-srv.ddns.net/yasp/).
+  base: './',
   plugins: [
     vue(),
     eslint(),

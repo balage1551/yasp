@@ -1,12 +1,11 @@
-spring:
-  config:
-    import: file:certs/application-prod-ssl.yaml
-
+# Plain HTTP: on the server the app is published on the loopback only, and Caddy terminates TLS
+# in front of it, serving the app under https://balage-srv.ddns.net/yasp/
+# (toolbelt-deploy/prod/yasp.caddy).
 server:
-  ssl:
-    bundle: "server"
-    enabled-protocols: TLSv1.3
+  # Caddy strips the /yasp prefix and sends it as X-Forwarded-Prefix; the framework strategy
+  # turns that into the context path (so cookies get Path=/yasp) and X-Forwarded-Proto into a
+  # secure request.
+  forward-headers-strategy: framework
 
 application:
-  allowed-origins: https://balage-srv.ddns.net:9810
-
+  allowed-origins: https://balage-srv.ddns.net

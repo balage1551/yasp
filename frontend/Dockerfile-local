@@ -1,0 +1,8 @@
+# Local Vite dev server (docker-compose-local.yml). Nothing is copied in: the sources are
+# mounted, so edits on the host hot-reload, and the dependencies are installed into the mounted
+# node_modules on every start (a no-op when package.json has not changed).
+FROM node:18.20.8
+
+EXPOSE 9811
+
+CMD ["sh", "-c", "npm install && npm run vite"]

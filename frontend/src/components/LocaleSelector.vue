@@ -5,7 +5,7 @@
         >
             <template v-slot:activator="{ props }">
                 <v-btn variant="text" color="primary" v-bind="props" class="mt-4" >
-                    <v-img :width="24" :src="'/flags/'+localeStore.language+'.svg'" class="mr-2 mt-1"></v-img>
+                    <v-img :width="24" :src="'flags/'+localeStore.language+'.svg'" class="mr-2 mt-1"></v-img>
                     {{ $t('language.nativeName.'+localeStore.language) }}
                 </v-btn>
             </template>
@@ -18,7 +18,7 @@
                         @click="setLocale(item)"
                 >
                     <v-list-item-title>
-                        <v-img :width="24" :src="'/flags/'+item+'.svg'" class="float-start mr-2 mt-1"></v-img>
+                        <v-img :width="24" :src="'flags/'+item+'.svg'" class="float-start mr-2 mt-1"></v-img>
                         {{ $t('language.nativeName.'+item) }}
                     </v-list-item-title>
                 </v-list-item>

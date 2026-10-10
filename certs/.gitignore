@@ -1,2 +1,11 @@
+# Every local certificate is generated, never shared: the keystore and the certificate only
+# make sense next to the private key they were made with, so sharing the public half alone
+# would just be overwritten by the next `certs/generate-local-cert.sh` run.
 **/*-ssl.yaml
 **/*.key
+**/*.crt
+**/*.csr
+**/*.pem
+**/*.p12
+**/*.jks
+**/*.keystore

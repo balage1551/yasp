@@ -1,0 +1,3 @@
+# The build context on the server is the home of the deploy user; the image only needs the war.
+*
+!deploy-temp/yasp.war

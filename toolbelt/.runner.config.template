@@ -1,0 +1,38 @@
+# Whether to print debug. Default is false.
+debug=false
+
+# The name of the docker compose file.
+#compose_file=docker-compose-local.yml
+
+# Use colored log entries. Default is false.
+use_colors=true
+
+# Whether to terminate the dockers and the runner on rerun failure. Default is false.
+#terminate_on_failure=false
+
+# Application name. If not specified, the name of the project directory is used
+#application_name=
+
+# Log colors (default is none)
+# The format of the name is <service_type>_color. There are some built in service types: system, error, debug, gradle.
+# The color should be any of the common color names:
+# black, red, green, yellow, blue, magenta, cyan, light_gray, light_red, light_green, light_yellow, light_blue,
+# light_magenta, light_cyan, white
+# Also, comma separated, you can add the following attributes: bold, italic, faint, underlined
+system_color=magenta,bold
+error_color=red,bold
+debug_color=light_gray,italic
+gradle_color=cyan
+deploy_color=light_blue
+
+backend_color=green
+frontend_color=yellow
+flyway_color=blue
+staging_color=green
+ai_color=cyan
+
+# Whether to start the loggers
+start_frontend_logger=false
+start_backend_logger=false
+start_ai_logger=false
+

@@ -1,0 +1,10 @@
+# Runner configuration on the server, uploaded by every deploy (toolbelt-deploy/prod/.deploy-config).
+debug=false
+compose_file=docker-compose-prod.yml
+application_name=yasp
+use_colors=true
+
+system_color=magenta,bold
+error_color=red,bold
+debug_color=light_gray,italic
+deploy_color=light_blue

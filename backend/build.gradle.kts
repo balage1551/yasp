@@ -1,10 +1,5 @@
 import com.github.gradle.node.npm.task.NpmTask
-import org.hidetake.groovy.ssh.core.Remote
-import org.hidetake.groovy.ssh.core.RunHandler
-import org.hidetake.groovy.ssh.session.SessionHandler
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.io.FileInputStream
-import java.util.*
 
 plugins {
     id("org.springframework.boot") version "3.1.5"
@@ -15,10 +10,8 @@ plugins {
     kotlin("kapt") version "2.0.20"
     id("com.github.node-gradle.node") version "7.0.1"
     id("war")
-    id("org.hidetake.ssh") version "2.11.2"
 //    id("com.github.monosoul.markdown.page.generator") version "2.4.0.0"
 //    id("org.beryx.jlink") version "3.0.1"
-    application
 }
 
 group = "hu.vissy.yasp"
@@ -96,18 +89,6 @@ kotlin {
     }
 }
 
-application {
-    applicationDefaultJvmArgs = listOf("-Dspring.profiles.active=prod")
-}
-
-val credentials = Properties().apply {
-    load(FileInputStream(projectDir.resolve(".server")))
-}
-
-val host = credentials.getProperty("host")
-val user = credentials.getProperty("user")
-val password = credentials.getProperty("password")
-
 tasks {
 
     val npmCheckInstall by registering(NpmTask::class) {
@@ -123,6 +104,12 @@ tasks {
         useJUnitPlatform()
     }
 
+
+    // The local docker image (backend/Dockerfile) runs this one; it leaves the frontend out,
+    // which the Vite dev server serves there.
+    named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+        archiveFileName.set("yasp.jar")
+    }
 
     named<War>("bootWar") {
         dependsOn(npmBuild)
@@ -177,34 +164,6 @@ tasks {
 //
 //        dependsOn(copyDocAssets)
 //    }
-
-    val deploy = create(name = "deployToServer") {
-        dependsOn(named("bootDistZip")) //, generateDocHtml)
-
-        group = "deploy"
-
-        val pi2 = Remote(
-            mapOf<String, String>(
-                "host" to host,
-                "user" to user,
-                "password" to password
-            )
-        )
-
-        doLast {
-            ssh.run(delegateClosureOf<RunHandler> {
-                session(pi2, delegateClosureOf<SessionHandler> {
-                    put(
-                        hashMapOf(
-                            "from" to getByName<Zip>("bootDistZip").archiveFile.get().asFile,
-                            "into" to "/home/balage/yasp/release"
-                        )
-                    )
-                    execute("/home/balage/yasp/install.sh")
-                })
-            })
-        }
-    }
 }
 
 // https://badass-jlink-plugin.beryx.org/releases/latest/
