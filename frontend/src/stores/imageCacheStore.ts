@@ -135,18 +135,18 @@ export const useImageCache =
     }
 
     function prefetcing(request: PrefetchRequest) {
-      fetchImage(request?.imageName, request?.width, request?.height, true)
+      // startPrefetching() has already taken the request off the queue, so its waiters travel
+      // with the fetch instead of being looked up there when the image arrives.
+      fetchImage(request.imageName, request.width, request.height, true, url => request.resolvers.forEach(resolve => resolve(url)))
     }
 
-    function onImageFetched(key: string, response: Blob, useCache: boolean) {
+    function onImageFetched(key: string, response: Blob, useCache: boolean, resolve?: (url: string) => void) {
       console.log('   onImageFetched', key, useCache)
       const url = register(key, response, useCache)
+      resolve?.(url)
+      // Waiters that queued the same image again while it was being fetched.
       const request = removeRequest(key)
-      if (request) {
-        request.resolvers.forEach(resolve => resolve(url))
-      } else {
-        console.error('No request found for', key)
-      }
+      request?.resolvers.forEach(waiter => waiter(url))
       imageCacheOnLoadBus.emit({ imageName: keyToImageName(key), success: true, url })
       if (useCache) {
         imageCacheOnUpdateBus.emit({ cached: cache.value.size, pending: imagePrefetchRequests.value.length })
@@ -176,7 +176,7 @@ export const useImageCache =
       }
       apiRequest
         .then(response => {
-          onImageFetched(key, response, useCache)
+          onImageFetched(key, response, useCache, resolve)
         })
         .catch(() => {
           onImageFetchFailed(key)
@@ -231,6 +231,7 @@ export const useImageCache =
     return {
 
       getImage,
+      waitForImage,
       fetchImage,
       requestImagePrefetch
     }
