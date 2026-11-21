@@ -14,6 +14,8 @@ export type RemoteStatus = {
   position: number
   total: number
   imageName?: string
+  // What the "next" command would show; undefined at the end
+  nextImageName?: string
   thumbnailsVisible: boolean
   canGoBack: boolean
   canGoForward: boolean

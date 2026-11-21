@@ -126,6 +126,7 @@ export const messagesHU = merge({}, messagesCommon, {
     disconnect: 'Kilépés',
     back: 'Vissza',
     thumbnails: 'Diaválasztó',
+    next: 'Következő',
     states: {
       playing: 'Lejátszás',
       holdOnSlide: 'Várakozás',

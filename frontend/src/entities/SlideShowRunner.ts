@@ -119,6 +119,11 @@ export class SlideShowRunner {
     }
   }
 
+  /** The slide the "next" step (ArrowRight) would show, without moving there. */
+  peekNextSlide(): ImageSlide | undefined {
+    return this.toSlide(this.calculateNextSlide(this.toSlideIndex(this.currentImageSlide), 'at-end'))
+  }
+
   updateCurrentSlide() {
     let slide: Slide = this.slideShow.slides[this.currentSlideIndex.value]
     this.currentSlide.value = slide

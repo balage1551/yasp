@@ -37,6 +37,10 @@
           </div>
         </div>
 
+        <div class="remote-current">
+          <remote-thumbnail :image-name="status?.imageName" :width="640" :height="480"></remote-thumbnail>
+        </div>
+
         <div class="remote-controls">
           <v-btn class="remote-button" color="primary" variant="flat" :disabled="!status?.canGoBack"
                  @click="send('prev')">
@@ -56,6 +60,14 @@
           </v-btn>
         </div>
 
+        <div class="remote-next">
+          <div class="remote-next-label remote-hint">{{ $t('remoteControl.next') }}</div>
+          <div class="remote-next-image">
+            <remote-thumbnail :image-name="status?.nextImageName" :width="400" :height="300"
+                              empty-icon="mdi-flag-checkered"></remote-thumbnail>
+          </div>
+        </div>
+
         <v-btn class="remote-wide-button" :variant="status?.thumbnailsVisible ? 'flat' : 'tonal'" color="primary"
                size="x-large" block @click="send('toggleThumbnails')">
           <v-icon size="32" class="mr-2">mdi-view-carousel</v-icon>
@@ -64,7 +76,7 @@
 
         <div class="flex-grow-1"></div>
 
-        <v-btn class="mt-6" variant="text" color="error" size="large" block @click="disconnect">
+        <v-btn class="mt-2" variant="text" color="error" size="large" block @click="disconnect">
           <v-icon class="mr-2">mdi-close</v-icon>
           {{ $t('remoteControl.disconnect') }}
         </v-btn>
@@ -79,6 +91,7 @@ import { VBtn, VIcon, VProgressCircular } from 'vuetify/components'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
+import RemoteThumbnail from '@/components/RemoteThumbnail.vue'
 import useRemoteControlApi, {
   forgetRemoteToken,
   isGone,
@@ -272,14 +285,44 @@ function leave() {
 }
 
 .remote-status {
-  text-align: center;
-  padding: 16px 0 24px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 4px 8px;
 }
 
 .remote-position {
-  font-size: 3.5em;
+  font-size: 2.2em;
   font-weight: bold;
   line-height: 1.1;
+}
+
+/* The thumbnails share the height left by the buttons, the current one getting the most */
+.remote-current {
+  height: 30vh;
+  min-height: 140px;
+  margin-bottom: 12px;
+}
+
+.remote-next {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.remote-next-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.8em;
+}
+
+.remote-next-image {
+  flex-grow: 1;
+  height: 16vh;
+  min-height: 90px;
 }
 
 .remote-total {
@@ -298,20 +341,16 @@ function leave() {
   display: grid;
   grid-template-columns: 1fr 1.4fr 1fr;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .remote-button {
-  height: 112px !important;
+  height: 88px !important;
   min-width: 0 !important;
 }
 
-.remote-button-main {
-  height: 112px !important;
-}
-
 .remote-wide-button {
-  height: 72px !important;
+  height: 56px !important;
 }
 
 /* Vuetify's block buttons grow (flex: 1 0 auto), which in the column would eat the free space */

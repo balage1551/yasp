@@ -229,9 +229,11 @@ function remoteStatus(): RemoteStatus {
     name: props.name,
     state: state.value,
     index: fullIndex(slide),
-    position: slide ? allSlides.value.indexOf(slide) + 1 : 0,
+    // By uid: currentSlide is a ref, so it holds a reactive proxy, not the slide object itself
+    position: slide ? allSlides.value.findIndex(s => s.uid === slide.uid) + 1 : 0,
     total: allSlides.value.length,
     imageName: slide?.imageName,
+    nextImageName: slideShowRunner.value?.peekNextSlide()?.imageName,
     thumbnailsVisible: slidePickerVisible.value,
     canGoBack: slideIndex > 0,
     canGoForward: slideIndex < props.slideShow.slides.length - 1
