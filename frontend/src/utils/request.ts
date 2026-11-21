@@ -7,8 +7,14 @@ export const baseUrl = getBaseUrl()
 
 function getBaseUrl() : string {
   if (import.meta.env.DEV) {
-    console.log('Development mode: ' + import.meta.env.VITE_APP_API_BASE_URL)
-    return import.meta.env.VITE_APP_API_BASE_URL
+    // The configured URL names localhost; opened from another device (e.g. a phone on the LAN
+    // as the remote control), the API is on the host the page came from, not on that device.
+    const url = new URL(import.meta.env.VITE_APP_API_BASE_URL)
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      url.hostname = window.location.hostname
+    }
+    console.log('Development mode: ' + url)
+    return url.toString()
   } else {
     // The API is served next to the page, which may sit under a path prefix (/yasp/ on the
     // server); the router uses the hash, so the path is always the directory of the app.
@@ -25,7 +31,11 @@ export const request = axios.create({
   baseURL: baseUrl, // api base_url
   timeout: 600000, // request timeout
   withCredentials: true,
-  withXSRFToken: true
+  withXSRFToken: true,
+  // Own names: on the server other apps on the same origin have an XSRF-TOKEN cookie too
+  // (see SecurityConfig).
+  xsrfCookieName: 'YASP-XSRF-TOKEN',
+  xsrfHeaderName: 'X-YASP-XSRF-TOKEN'
 })
 
 const snackbarStore = useSnackbarStore()
@@ -67,7 +77,7 @@ request.interceptors.response.use(
     }
   },
   error => {
-    if (error.config.url === '/auth/login' && !error.config.headers['X-XSRF-TOKEN'] && loginRetryCounter < 2) {
+    if (error.config.url === '/auth/login' && !error.config.headers['X-YASP-XSRF-TOKEN'] && loginRetryCounter < 2) {
       loginRetryCounter++
       return request.request(error.config)
     }

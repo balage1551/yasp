@@ -8,7 +8,29 @@ const resourceApi = useResourceApi()
 
 const { width: windowWidth, height: windowHeight } = useWindowSize()
 
+type PrefetchRequest = {
+  key: string
+  imageName: string
+  width: number
+  height: number,
+  resolvers: ((url: string) => void)[]
+}
+
 let prefetchTimer: NodeJS.Timeout | undefined
+// The request taken off the queue whose fetch the timer is about to start.
+let prefetchScheduled: PrefetchRequest | undefined
+// Whether the (single) prefetch chain is running: a fetch of it is scheduled or in flight.
+let prefetchBusy = false
+
+// Images loaded outside the cache (thumbnails) are fetched with this many requests at most at once.
+const MAX_PARALLEL_UNCACHED = 4
+
+export type UncachedImageLoad = {
+  // Resolves to an object URL owned by the caller (revoke it when no longer shown).
+  promise: Promise<string>
+  // Drops the load if it has not started yet; a started one resolves to nothing.
+  cancel: () => void
+}
 
 export type ImageCacheUpdateEvent = {
   cached: number
@@ -26,14 +48,6 @@ export const imageCacheOnLoadBus = useEventBus(imageCacheLoadBusKey)
 
 export const imageCacheUpdateBusKey: EventBusKey<ImageCacheUpdateEvent> = Symbol('imageCache')
 export const imageCacheOnUpdateBus = useEventBus(imageCacheUpdateBusKey)
-
-type PrefetchRequest = {
-  key: string
-  imageName: string
-  width: number
-  height: number,
-  resolvers: ((url: string) => void)[]
-}
 
 export const useImageCache =
   defineStore('imageCache', () => {
@@ -120,24 +134,38 @@ export const useImageCache =
       if (prefetchTimer) {
         console.log('Stopping prefetching')
         clearTimeout(prefetchTimer)
+        prefetchTimer = undefined
+        // Its fetch never started: give the request back to the queue (with its waiters).
+        if (prefetchScheduled) {
+          imagePrefetchRequests.value.unshift(prefetchScheduled)
+          prefetchScheduled = undefined
+        }
+        prefetchBusy = false
       }
-      prefetchTimer = undefined
     }
 
+    // Starts the prefetch chain unless it is already running: only one prefetch is in flight at
+    // a time, each finished one starts the next.
     function startPrefetching() {
-      stopPrefetching()
+      if (prefetchBusy) {
+        return
+      }
       console.log('Starting prefetching', imagePrefetchRequests.value.length)
       if (imagePrefetchRequests.value.length > 0) {
-        const request = imagePrefetchRequests.value.shift()
-        console.log('   Fetching ', request?.key)
-        prefetchTimer = setTimeout(() => prefetcing(request!), 100)
+        const request = imagePrefetchRequests.value.shift()!
+        console.log('   Fetching ', request.key)
+        prefetchBusy = true
+        prefetchScheduled = request
+        prefetchTimer = setTimeout(() => prefetcing(request), 100)
       }
     }
 
     function prefetcing(request: PrefetchRequest) {
+      prefetchTimer = undefined
+      prefetchScheduled = undefined
       // startPrefetching() has already taken the request off the queue, so its waiters travel
       // with the fetch instead of being looked up there when the image arrives.
-      fetchImage(request.imageName, request.width, request.height, true, url => request.resolvers.forEach(resolve => resolve(url)))
+      fetchImage(request.imageName, request.width, request.height, true, url => request.resolvers.forEach(resolve => resolve(url)), true)
     }
 
     function onImageFetched(key: string, response: Blob, useCache: boolean, resolve?: (url: string) => void) {
@@ -164,7 +192,8 @@ export const useImageCache =
       width: number = windowWidth.value || 1920,
       height: number = windowHeight.value || 1080,
       useCache: boolean = false,
-      resolve: ((url: string) => void) | undefined = undefined
+      resolve: ((url: string) => void) | undefined = undefined,
+      prefetch: boolean = false
     ) {
       console.log('fetchImage', imageName, width, height)
       const key = makeKey(imageName, width, height)
@@ -182,6 +211,10 @@ export const useImageCache =
           onImageFetchFailed(key)
         })
         .finally(() => {
+          if (prefetch) {
+            prefetchBusy = false
+          }
+          // Continues the chain, or restarts it if it went idle while requests were waiting.
           startPrefetching()
         })
     }
@@ -211,7 +244,60 @@ export const useImageCache =
             imagePrefetchRequests.value.splice(0, 0, req)
           }
           req.resolvers.push(resolve)
+          startPrefetching()
         })
+      }
+    }
+
+    const uncachedWaiting: (() => void)[] = []
+    let uncachedActive = 0
+
+    function pumpUncached() {
+      const free = MAX_PARALLEL_UNCACHED - uncachedActive
+      // Each start raises uncachedActive
+      uncachedWaiting.splice(0, Math.max(0, free)).forEach(start => start())
+    }
+
+    /**
+     * Loads an image (a thumbnail if a size is given) bypassing the cache and the prefetch queue,
+     * which serve the slideshow itself. Meant for the many small images of the slide lists.
+     */
+    function loadUncached(imageName: string, width?: number, height?: number): UncachedImageLoad {
+      let cancelled = false
+      let start: (() => void) | undefined
+      const promise = new Promise<string>((resolve, reject) => {
+        start = () => {
+          start = undefined
+          uncachedActive++
+          const apiRequest = (width && height)
+            ? resourceApi.requestThumbnail(imageName, width, height)
+            : resourceApi.requestImage(imageName)
+          apiRequest
+            .then((blob) => {
+              if (!cancelled) {
+                resolve(URL.createObjectURL(blob))
+              }
+            })
+            .catch(reject)
+            .finally(() => {
+              uncachedActive--
+              pumpUncached()
+            })
+        }
+        uncachedWaiting.push(start)
+        pumpUncached()
+      })
+      return {
+        promise,
+        cancel: () => {
+          cancelled = true
+          if (start) {
+            const index = uncachedWaiting.indexOf(start)
+            if (index >= 0) {
+              uncachedWaiting.splice(index, 1)
+            }
+          }
+        }
       }
     }
 
@@ -232,6 +318,7 @@ export const useImageCache =
 
       getImage,
       waitForImage,
+      loadUncached,
       fetchImage,
       requestImagePrefetch
     }

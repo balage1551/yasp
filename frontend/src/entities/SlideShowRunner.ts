@@ -111,6 +111,14 @@ export class SlideShowRunner {
     console.log('Key pressed', code)
   }
 
+  /** Continues a held playback (manually or waiting for a key), whatever its trigger keys are. */
+  resume() {
+    if (this.state === SlideShowState.MANUAL_HOLD || this.state === SlideShowState.HOLD_ON_SLIDE) {
+      this.setState(SlideShowState.PLAYING)
+      this.showNext()
+    }
+  }
+
   updateCurrentSlide() {
     let slide: Slide = this.slideShow.slides[this.currentSlideIndex.value]
     this.currentSlide.value = slide

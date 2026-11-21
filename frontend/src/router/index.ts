@@ -25,6 +25,14 @@ const routes: Array<RouteRecordRaw> = [
       requiresAuth: false
     },
   },
+  {
+    path: '/remote/:id',
+    name: 'RemoteControl',
+    component: () => import('../views/RemoteControlView.vue'),
+    meta: {
+      requiresAuth: false
+    },
+  },
 ]
 
 const router = createRouter({

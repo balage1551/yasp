@@ -36,6 +36,23 @@
 
       <v-card v-if="!play" class="slide-show-info">
         <v-card-title class="slide-show-info-title">
+          <v-icon class="mr-2">mdi-remote</v-icon>{{ $t('remoteControl.title') }}
+        </v-card-title>
+        <v-card-text class="slide-show-info-details">
+          <form class="d-flex align-center pa-2" @submit.prevent="startRemoteControl">
+            <v-text-field v-model="remoteId" :label="$t('remoteControl.code')" inputmode="numeric"
+                          maxlength="7" autocomplete="off" hide-details density="comfortable"
+                          variant="outlined" class="mr-3"></v-text-field>
+            <v-btn type="submit" color="primary" variant="flat" size="large"
+                   :disabled="!remoteIdValid" :loading="remoteConnecting">
+              {{ $t('remoteControl.start') }}
+            </v-btn>
+          </form>
+        </v-card-text>
+      </v-card>
+
+      <v-card v-if="!play" class="slide-show-info">
+        <v-card-title class="slide-show-info-title">
           Cache Tester
         </v-card-title>
         <v-card-text class="slide-show-info-details">
@@ -49,7 +66,7 @@
           </v-sheet>
         </v-card-text>
       </v-card>
-        <slide-show-player v-if="play && slideShow" :slideShow="slideShow" @finished="play = false">
+        <slide-show-player v-if="play && slideShow" :slideShow="slideShow" :name="slideShowName" @finished="play = false">
         </slide-show-player>
     </v-container>
   </application-layout>
@@ -57,7 +74,7 @@
 </template>
 <script setup lang="ts">
 
-import { VBtn, VCard, VCardText, VCardTitle, VContainer, VIcon, VSheet } from 'vuetify/components'
+import { VBtn, VCard, VCardText, VCardTitle, VContainer, VIcon, VSheet, VTextField } from 'vuetify/components'
 import { computed, onMounted, ref, shallowRef, ShallowRef } from 'vue'
 import ApplicationLayout from '@/layouts/ApplicationLayout.vue'
 import { SlideShow } from '@/entities/SlideShowTypes'
@@ -70,12 +87,14 @@ import { Button, ButtonSet, useConfirmDialog } from '@/modules/dialog/confirmDia
 import { useI18n } from 'vue-i18n'
 import { useSnackbarStore } from '@/modules/snackbar/snackbarStore'
 import { useGeneralImageCacheStore } from '@/stores/imageCacheStoreGeneric'
+import useRemoteControlApi, { storeRemoteToken } from '@/api/remoteControlApi'
 
 const createConfirmDialog = useConfirmDialog()!
 const i18n = useI18n()
 
 const slideShow: ShallowRef<undefined | SlideShow> = shallowRef()
 const play = ref(false)
+const slideShowName = ref<string>()
 
 const path = ref<string>('')
 const editable = ref<boolean>(false)
@@ -171,11 +190,36 @@ function createNew() {
 function startPlay(ss: SlideShowListItem) {
   useSlideShowApi().requestSlideShow(path.value, ss.name).then((response) => {
     slideShow.value = processSlideShowData(response)
+    slideShowName.value = ss.name
     play.value = true
   })
 }
 
 const router = useRouter()
+
+// Remote control
+
+const remoteId = ref('')
+const remoteConnecting = ref(false)
+const normalizedRemoteId = computed(() => remoteId.value.replace(/\s/g, ''))
+const remoteIdValid = computed(() => /^\d{6}$/.test(normalizedRemoteId.value))
+
+function startRemoteControl() {
+  if (!remoteIdValid.value || remoteConnecting.value) {
+    return
+  }
+  const id = normalizedRemoteId.value
+  remoteConnecting.value = true
+  useRemoteControlApi().connect(id).then((response) => {
+    storeRemoteToken(id, response.token)
+    remoteId.value = ''
+    router.push({ name: 'RemoteControl', params: { id } })
+  }).catch(() => {
+    useSnackbarStore().addError('@remoteControl.notFound')
+  }).finally(() => {
+    remoteConnecting.value = false
+  })
+}
 
 function startEditor(ss: SlideShowListItem) {
   useEditorStore().setCurrentSlideShow(path.value, ss.name).then(() => {

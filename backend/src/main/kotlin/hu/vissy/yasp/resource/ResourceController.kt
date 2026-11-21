@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
 
@@ -37,7 +38,8 @@ class ResourceController : BaseController() {
         return ResponseEntity(imageBytes, headers, HttpStatus.OK)
     }
 
-    private val thumbnailCache = mutableMapOf<String, ByteArray>()
+    // Shared by all request threads
+    private val thumbnailCache = ConcurrentHashMap<String, ByteArray>()
 
     @PostMapping("/thumbnail")
     fun getThumbnail(@RequestBody @Validated request: ImageRequestDTO): ResponseEntity<ByteArray> {
@@ -46,29 +48,30 @@ class ResourceController : BaseController() {
         val filePath = "${arguments.path}/${request.fileName}"
         val key = "${filePath}@${requestedWidth}x${requestedHeight}"
         log.info("Requesting thumbnail: $key")
-        Thread.sleep(1000)
-        if (!thumbnailCache.containsKey(key)) {
-            val imgFile: Path = Path.of(filePath)
-            val originalImage: BufferedImage = ImageIO.read(Files.newInputStream(imgFile))
-
-            val (width, height) = calculateThumbnailSize(originalImage.width, originalImage.height, requestedWidth, requestedHeight)
-            val resizedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-            val graphics = resizedImage.createGraphics()
-            graphics.drawImage(originalImage, 0, 0, width, height, null)
-            graphics.dispose()
-
-            val outputStream = ByteArrayOutputStream()
-            ImageIO.write(resizedImage, "jpeg", outputStream)
-            val imageBytes = outputStream.toByteArray()
-            log.info("Thumbnail generated, size: ${imageBytes.size}")
-            thumbnailCache[key] = imageBytes
+        val imageBytes = thumbnailCache[key] ?: createThumbnail(filePath, requestedWidth, requestedHeight).also {
+            thumbnailCache[key] = it
         }
 
-        val imageBytes = thumbnailCache[key]!!
         val headers = HttpHeaders()
         headers.add("Content-Type", "image/jpeg")
 
         return ResponseEntity(imageBytes, headers, HttpStatus.OK)
+    }
+
+    private fun createThumbnail(filePath: String, requestedWidth: Int, requestedHeight: Int): ByteArray {
+        val originalImage: BufferedImage = Files.newInputStream(Path.of(filePath)).use { ImageIO.read(it) }
+
+        val (width, height) = calculateThumbnailSize(originalImage.width, originalImage.height, requestedWidth, requestedHeight)
+        val resizedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+        val graphics = resizedImage.createGraphics()
+        graphics.drawImage(originalImage, 0, 0, width, height, null)
+        graphics.dispose()
+
+        val outputStream = ByteArrayOutputStream()
+        ImageIO.write(resizedImage, "jpeg", outputStream)
+        val imageBytes = outputStream.toByteArray()
+        log.info("Thumbnail generated, size: ${imageBytes.size}")
+        return imageBytes
     }
 
     private fun calculateThumbnailSize(originalWidth: Int, originalHeight: Int, maxWidth: Int, maxHeight: Int): Pair<Int, Int> {

@@ -5,6 +5,18 @@
     <v-icon v-if="state === SlideShowState.MANUAL_HOLD" class="icon paused-manual" size="50">mdi-pause</v-icon>
     <v-icon v-if="state === SlideShowState.FINISHED" class="icon finished" size="50">mdi-square</v-icon>
     <v-icon v-if="slideShowRunner?.currentSlide?.value?.type === 'group'" class="loopIcon" size="40">mdi-sync</v-icon>
+    <v-icon v-if="remoteControl.connected.value" class="remoteIcon" size="30">mdi-remote</v-icon>
+    <div v-if="remoteControl.waiting.value" class="remote-code" @click.stop>
+      <div class="remote-code-title">
+        <v-icon size="40" class="mr-2">mdi-remote</v-icon>
+        Távvezérlés
+      </div>
+      <div class="remote-code-id">{{ formattedRemoteId }}</div>
+      <div class="remote-code-hint">
+        Add meg ezt a kódot a telefonon a főmenü <b>Távvezérlés</b> mezőjében.<br/>
+        <span class="kbc-button">Esc</span> Mégse
+      </div>
+    </div>
     <slide-show-progress v-if="slideShowRunner" :slide-show-runner="slideShowRunner"></slide-show-progress>
     <div class="infoBox text-left" v-if="showInfo">
       {{ currentSlide?.imageName }} ({{ fullIndex(currentSlide) }} of {{ total }}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
@@ -100,6 +112,10 @@
         <span> Vezérlőbillentyűk megjelenítése</span>
       </div>
       <div class="center">
+        <div class="float-start kbc-button mr-5">R</div>
+        <span> Távvezérlés bekapcsolása (telefonról)</span>
+      </div>
+      <div class="center">
         <div class="float-start kbc-button mr-5">F1</div>
         <span> Ez a súgó megjelenítése és elrejtése</span>
       </div>
@@ -113,25 +129,22 @@ import { ImageSlide, SlideShow } from '@/entities/SlideShowTypes'
 import { computed, nextTick, onMounted, ref, shallowRef, StyleValue, watchEffect } from 'vue'
 import CrossFader from '@/components/CrossFader.vue'
 import { SlideShowRunner, SlideShowState } from '@/entities/SlideShowRunner'
-import {
-  useElementSize,
-  useEventListener,
-  useFullscreen,
-  usePointerSwipe,
-  useScreenOrientation,
-  UseSwipeDirection,
-  useWindowSize
-} from '@vueuse/core'
+import { useElementSize, useEventListener, useFullscreen, usePointerSwipe, useScreenOrientation, UseSwipeDirection, useWindowSize } from '@vueuse/core'
 import { fullIndex } from '@/entities/SlideShowUtils'
 import SlideShowProgress from '@/components/SlideShowProgress.vue'
 import { UseDeviceOrientation } from '@vueuse/components'
 import LabeledImageRenderer from '@/components/LabeledImageRenderer.vue'
 import { useSlideStore } from '@/stores/slideStore'
 import { imageCacheOnUpdateBus, ImageCacheUpdateEvent, useImageCache } from '@/stores/imageCacheStore'
+import { useRemoteControlHost } from '@/composables/remoteControlHost'
+import { RemoteCommand, RemoteStatus } from '@/api/remoteControlApi'
 
 const props = withDefaults(defineProps<{
   slideShow: SlideShow
-}>(), {})
+  name?: string
+}>(), {
+  name: undefined
+})
 
 const { enter: enterFullScreen, exit: exitFullScreen } = useFullscreen()
 
@@ -200,8 +213,64 @@ onMounted(() => {
   show.start()
 })
 
+// REMOTE CONTROL
+
+const remoteControl = useRemoteControlHost(remoteStatus, executeRemoteCommand)
+
+const formattedRemoteId = computed(() => {
+  const id = remoteControl.id.value
+  return id ? id.substring(0, 3) + ' ' + id.substring(3) : '··· ···'
+})
+
+function remoteStatus(): RemoteStatus {
+  const slide = currentSlide.value
+  const slideIndex = slideShowRunner.value?.currentSlideIndex.value ?? 0
+  return {
+    name: props.name,
+    state: state.value,
+    index: fullIndex(slide),
+    position: slide ? allSlides.value.indexOf(slide) + 1 : 0,
+    total: allSlides.value.length,
+    imageName: slide?.imageName,
+    thumbnailsVisible: slidePickerVisible.value,
+    canGoBack: slideIndex > 0,
+    canGoForward: slideIndex < props.slideShow.slides.length - 1
+  }
+}
+
+function executeRemoteCommand(command: RemoteCommand) {
+  console.log('Remote command', command)
+  switch (command) {
+    case 'next':
+      sendKey('ArrowRight')
+      break
+    case 'prev':
+      sendKey('ArrowLeft')
+      break
+    case 'pause':
+      if (state.value !== SlideShowState.MANUAL_HOLD) {
+        sendKey('Pause')
+      }
+      break
+    case 'resume':
+      slideShowRunner.value?.resume()
+      break
+    case 'toggleThumbnails':
+      handleKey('Tab')
+      break
+  }
+}
+
 function handleKey(code: string) {
   console.log('handleKey', code)
+  if (code === 'r' || code === 'R') {
+    remoteControl.start()
+    return true
+  }
+  if (code === 'Escape' && remoteControl.waiting.value) {
+    remoteControl.stop()
+    return true
+  }
   if (code === 'i') {
     showInfo.value = !showInfo.value
   }
@@ -483,6 +552,49 @@ function hideSlidePicker() {
   top: 25px;
   color: #415494;
   text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+}
+
+.remoteIcon {
+  z-index: 1000;
+  position: fixed;
+  left: 130px;
+  top: 30px;
+  color: #4caf50;
+  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+}
+
+.remote-code {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6000;
+  padding: 1.5em 2.5em;
+  text-align: center;
+  color: #ffffff;
+  background-color: #111111e0;
+  border: 2px solid #143d96;
+  border-radius: 12px;
+}
+
+.remote-code-title {
+  font-size: 1.6em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remote-code-id {
+  font-size: 5em;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  font-family: monospace;
+  margin: 0.2em 0;
+}
+
+.remote-code-hint {
+  color: #bbbbbb;
+  line-height: 2.2em;
 }
 
 .paused-slide {

@@ -22,7 +22,9 @@ const vuetify = createVuetify({
 })
 
 const pinia = createPinia()
-pinia.use(createPersistedState())
+// Prefixed: on the server the app shares its origin (and so localStorage) with other apps, whose
+// stores have the same names (e.g. naboo's token and locale).
+pinia.use(createPersistedState({ key: (storeKey) => `yasp.${storeKey}` }))
 
 const app: VueApp<Element> = createApp(App)
   .use(i18n)

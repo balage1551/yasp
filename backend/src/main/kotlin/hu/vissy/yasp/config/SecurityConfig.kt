@@ -27,6 +27,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler
@@ -86,10 +87,19 @@ class SecurityConfig(
                 headers.cacheControl(Customizer.withDefaults())
             }
             .csrf {
-                it.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                // Own names: on the server other apps share the origin, and their XSRF-TOKEN cookie
+                // (Path=/) would also be sent here (frontend: utils/request.ts).
+                it.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse().apply {
+                    setCookieName(XSRF_COOKIE_NAME)
+                    setHeaderName(X_XSRF_TOKEN)
+                })
                 it.csrfTokenRequestHandler(XorCsrfTokenRequestAttributeHandler())
                 it.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandler())
+                // The remote (a phone) may start right on its first request, before any XSRF cookie
+                // exists; the sessions are guarded by their own tokens.
+                it.ignoringRequestMatchers(mvc.pattern("/remote-control/**"))
             }
+            .addFilterAfter(CsrfCookieFilter(), BasicAuthenticationFilter::class.java)
             .cors { }
             .authorizeHttpRequests { registry ->
                 // TODO: migrate
@@ -147,6 +157,7 @@ class SecurityConfig(
         private const val AUTHORIZATION_HEADER = "authorization"
         private const val CONTENT_TYPE_HEADER = "content-type"
         private const val X_AUTH_TOKEN_HEADER = "x-auth-token"
-        private const val X_XSRF_TOKEN = "x-xsrf-token"
+        private const val X_XSRF_TOKEN = "x-yasp-xsrf-token"
+        private const val XSRF_COOKIE_NAME = "YASP-XSRF-TOKEN"
     }
 }

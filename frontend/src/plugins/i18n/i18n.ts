@@ -5,7 +5,7 @@ const i18n = createI18n({
   legacy: false,
   globalInjection: true,
   locale: 'hu',
-  fallbackLocale: 'wn',
+  fallbackLocale: 'hu',
   reloadOnLanguageChange: true,
   fallbackWarn: false,
   messages,

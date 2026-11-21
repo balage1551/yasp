@@ -114,6 +114,25 @@ export const messagesHU = merge({}, messagesCommon, {
       success: 'Diavetítés sikeresen törölve'
     },
   },
+  remoteControl: {
+    title: 'Távvezérlés',
+    code: 'Kód a vetítésről',
+    start: 'Indítás',
+    notFound: 'Nincs ilyen kódú vetítés',
+    connecting: 'Kapcsolódás...',
+    lost: 'A kapcsolat megszakadt',
+    lostHint: 'A vetítés véget ért, vagy egy másik távvezérlő vette át.',
+    reconnect: 'Újrakapcsolódás',
+    disconnect: 'Kilépés',
+    back: 'Vissza',
+    thumbnails: 'Diaválasztó',
+    states: {
+      playing: 'Lejátszás',
+      holdOnSlide: 'Várakozás',
+      manualHold: 'Megállítva',
+      finished: 'Vége'
+    }
+  },
   slideShowInfo: {
     title: 'Diavetítések',
     new: 'Új diavetítés',

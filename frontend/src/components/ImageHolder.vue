@@ -1,7 +1,7 @@
 <template>
   <div class="stack" :class="{ 'fade-in': visible, 'fade-out': !visible }" v-bind="props">
     <template v-if="slideInfo ">
-      <labeled-image-renderer :slide="slideInfo" :width="windowSize.width.value" :cached="props.cached" :height="windowSize.height.value" @image-loaded="emit('image-loaded')"></labeled-image-renderer>
+      <labeled-image-renderer :slide="slideInfo" :width="windowSize.width.value" :cached="props.cached" :lazy="false" :height="windowSize.height.value" @image-loaded="emit('image-loaded')"></labeled-image-renderer>
     </template>
 <!--    <template v-else>-->
 <!--      <v-img ref="imageTag" v-if="slideInfo" :src="image" alt="slideInfo.imageName" class="image" @load="imageLoaded = true"></v-img>-->

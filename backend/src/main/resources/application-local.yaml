@@ -9,4 +9,4 @@ server:
     enabled-protocols: TLSv1.3
 
 application:
-  allowed-origins: https://localhost:9811,https://localhost:9810
+  allowed-origins: https://localhost:9811,https://localhost:9810,https://192.168.1.16:9811,https://192.168.1.16:9810
